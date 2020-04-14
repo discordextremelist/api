@@ -30,7 +30,7 @@ const apiRateSettings = new rateLimit.RateLimiterRedis({
     points: 75,
     duration: 1,
     blockDuration: 10,
-    keyPrefix: "delAPIRatelimit"
+    keyPrefix: "ratelimiter"
 });
 
 router.get('*', async (req, res, next) => {
@@ -113,6 +113,18 @@ router.get("/user/:id", async (req, res) => {
     });
 
     res.status(200).json({ error: false, status: 200, user });
+});
+
+router.get("/server/:id", async (req, res) => {
+    const server = await req.app.db.collection("servers").findOne({ "id": req.params.id }, { projection: { _id: 0, links: 0 } });
+    
+    if (!server) return res.status(404).json({
+        error: true,
+        message: "Unknown Server",
+        status: 404
+    });
+
+    res.status(200).json({ error: false, status: 200, server });
 });
 
 router.get("/bot/:id", async (req, res) => {
