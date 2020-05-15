@@ -21,7 +21,7 @@
   "dependencies": {
     "canvas-constructor": "^3.2.0",
     "express": "^4.17.1",
-    "fs-nextra": "^0.4.7",
+    "fs-nextra": "^0.5.1",
     "http-errors": "^1.7.3",
     "mongodb": "^3.5.5",
     "morgan": "^1.10.0",
