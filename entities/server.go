@@ -22,7 +22,6 @@ type Server struct {
 	Links      ServerLinks `json:"links"`
 }
 
-// TODO: CleanupServer
 func CleanupServer(rank UserRank, server *Server) *Server {
 	copied := *server
 	copied.InviteCode = ""
@@ -31,5 +30,5 @@ func CleanupServer(rank UserRank, server *Server) *Server {
 		copied.InviteCode = server.InviteCode
 		copied.Links.Invite = server.Links.Invite
 	}
-	return server
+	return &copied
 }

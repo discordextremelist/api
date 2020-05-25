@@ -4,6 +4,7 @@ import (
 	"github.com/discordextremelist/api/ratelimit"
 	"github.com/discordextremelist/api/util"
 	"github.com/go-chi/chi"
+	"go.mongodb.org/mongo-driver/mongo"
 	"net/http"
 	"time"
 )
@@ -14,9 +15,13 @@ var (
 )
 
 func Bot(w http.ResponseWriter, r *http.Request) {
-	err, bot := util.LookupBot(chi.URLParam(r, "id"), false)
+	err, bot := util.LookupBot(chi.URLParam(r, "id"), true)
 	if err != nil {
-		util.WriteErrorResponse(w, err)
+		if err == mongo.ErrNoDocuments {
+			util.NotFound(w, r)
+		} else {
+			util.WriteErrorResponse(w, err)
+		}
 		return
 	}
 	util.WriteBotResponse(w, bot)

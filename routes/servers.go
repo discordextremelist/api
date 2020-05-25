@@ -4,12 +4,22 @@ import (
 	"github.com/discordextremelist/api/ratelimit"
 	"github.com/discordextremelist/api/util"
 	"github.com/go-chi/chi"
+	"go.mongodb.org/mongo-driver/mongo"
 	"net/http"
 	"time"
 )
 
-func GetServer(w http.ResponseWriter, _ *http.Request) {
-	util.WriteNotImplementedResponse(w)
+func GetServer(w http.ResponseWriter, r *http.Request) {
+	err, server := util.LookupServer(chi.URLParam(r, "id"), true)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			util.NotFound(w, r)
+		} else {
+			util.WriteErrorResponse(w, err)
+		}
+		return
+	}
+	util.WriteServerResponse(w, server)
 }
 
 func InitServerRoutes() {

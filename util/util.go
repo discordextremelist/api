@@ -8,6 +8,7 @@ import (
 	"github.com/json-iterator/go"
 	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 var (
@@ -36,7 +37,7 @@ func mongoLookupBot(id string) (error, *entities.Bot) {
 	if err := res.Decode(&bot); err != nil {
 		return err, nil
 	}
-	return nil, entities.CleanupBot(fakeRank, &bot)
+	return nil, &bot
 }
 
 func LookupBot(id string, clean bool) (error, *entities.Bot) {
@@ -45,6 +46,9 @@ func LookupBot(id string, clean bool) (error, *entities.Bot) {
 		if redisBot == "" {
 			err, bot := mongoLookupBot(id)
 			if err != nil {
+				if err == mongo.ErrNoDocuments {
+					return err, nil
+				}
 				log.Errorf("Fallback for MongoDB failed for LookupBot(%s): %v", id, err.Error())
 				return LookupError, nil
 			} else {
@@ -68,6 +72,9 @@ func LookupBot(id string, clean bool) (error, *entities.Bot) {
 	} else {
 		err, bot := mongoLookupBot(id)
 		if err != nil {
+			if err == mongo.ErrNoDocuments {
+				return err, nil
+			}
 			log.Errorf("Fallback for MongoDB failed for LookupBot(%s): %v", id, err.Error())
 			return LookupError, nil
 		} else {
@@ -88,7 +95,7 @@ func mongoLookupUser(id string) (error, *entities.User) {
 	if err := res.Decode(&user); err != nil {
 		return err, nil
 	}
-	return nil, entities.CleanupUser(fakeRank, &user)
+	return nil, &user
 }
 
 func LookupUser(id string, clean bool) (error, *entities.User) {
@@ -97,6 +104,9 @@ func LookupUser(id string, clean bool) (error, *entities.User) {
 		if redisUser == "" {
 			err, user := mongoLookupUser(id)
 			if err != nil {
+				if err == mongo.ErrNoDocuments {
+					return err, nil
+				}
 				log.Errorf("Fallback for MongoDB failed for LookupUser(%s): %v", id, err.Error())
 				return LookupError, nil
 			} else {
@@ -112,11 +122,17 @@ func LookupUser(id string, clean bool) (error, *entities.User) {
 			log.Errorf("Json parsing failed for LookupBot(%s): %v", id, err.Error())
 			return LookupError, nil
 		} else {
-			return nil, entities.CleanupUser(fakeRank, user)
+			if clean {
+				user = entities.CleanupUser(fakeRank, user)
+			}
+			return nil, user
 		}
 	} else {
 		err, user := mongoLookupUser(id)
 		if err != nil {
+			if err == mongo.ErrNoDocuments {
+				return err, nil
+			}
 			log.Errorf("Fallback for MongoDB failed for LookupUser(%s): %v", id, err.Error())
 			return LookupError, nil
 		} else {
@@ -124,6 +140,65 @@ func LookupUser(id string, clean bool) (error, *entities.User) {
 				user = entities.CleanupUser(fakeRank, user)
 			}
 			return nil, user
+		}
+	}
+}
+
+func mongoLookupServer(id string) (error, *entities.Server) {
+	res := Database.Mongo.Collection("servers").FindOne(context.TODO(), bson.M{"_id": id})
+	if res.Err() != nil {
+		return res.Err(), nil
+	}
+	server := entities.Server{}
+	if err := res.Decode(&server); err != nil {
+		return err, nil
+	}
+	return nil, &server
+}
+
+func LookupServer(id string, clean bool) (error, *entities.Server) {
+	redisServer, err := Database.Redis.HGet("servers", id).Result()
+	if err != nil {
+		if redisServer == "" {
+			err, server := mongoLookupServer(id)
+			if err != nil {
+				if err == mongo.ErrNoDocuments {
+					return err, nil
+				}
+				log.Errorf("Fallback for MongoDB failed for LookupUser(%s): %v", id, err.Error())
+				return LookupError, nil
+			} else {
+				if clean {
+					server = entities.CleanupServer(fakeRank, server)
+				}
+				return nil, server
+			}
+		}
+		server := &entities.Server{}
+		err = Json.UnmarshalFromString(redisServer, &server)
+		if err != nil {
+			if err == mongo.ErrNoDocuments {
+				return err, nil
+			}
+			log.Errorf("Json parsing failed for LookupBot(%s): %v", id, err.Error())
+			return LookupError, nil
+		} else {
+			if clean {
+				server = entities.CleanupServer(fakeRank, server)
+			}
+			return nil, server
+		}
+	} else {
+		err, server := mongoLookupServer(id)
+		if err != nil {
+			log.Error(err)
+			log.Errorf("Fallback for MongoDB failed for LookupUser(%s): %v", id, err.Error())
+			return LookupError, nil
+		} else {
+			if clean {
+				server = entities.CleanupServer(fakeRank, server)
+			}
+			return nil, server
 		}
 	}
 }

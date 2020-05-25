@@ -85,7 +85,7 @@ func (manager *Manager) OpenMongoConnection() {
 	url := os.Getenv("MONGO_URL")
 	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(url))
 	if err != nil {
-		log.WithField("type", "MongoDB").Panicf("Failed to connect to mongodb instance: %s", err.Error())
+		log.WithField("type", "MongoDB").Fatalf("Failed to connect to mongodb instance: %s", err.Error())
 	}
 	backoff := 0 * time.Second
 	attempt := 0

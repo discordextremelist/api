@@ -4,14 +4,19 @@ import (
 	"github.com/discordextremelist/api/ratelimit"
 	"github.com/discordextremelist/api/util"
 	"github.com/go-chi/chi"
+	"go.mongodb.org/mongo-driver/mongo"
 	"net/http"
 	"time"
 )
 
 func GetUser(w http.ResponseWriter, r *http.Request) {
-	err, user := util.LookupUser(chi.URLParam(r, "id"), false)
+	err, user := util.LookupUser(chi.URLParam(r, "id"), true)
 	if err != nil {
-		util.WriteErrorResponse(w, err)
+		if err == mongo.ErrNoDocuments {
+			util.NotFound(w, r)
+		} else {
+			util.WriteErrorResponse(w, err)
+		}
 		return
 	}
 	util.WriteUserResponse(w, user)

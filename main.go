@@ -21,13 +21,13 @@ func init() {
 			util.Dev = true
 		}
 	}
-	log.SetLevel(log.PanicLevel)
+	log.SetLevel(log.DebugLevel)
 	log.SetFormatter(&log.TextFormatter{ForceColors: true, FullTimestamp: true})
 	_ = godotenv.Load()
 	for i := 0; i < len(check); i++ {
 		_, ok := os.LookupEnv(check[i])
 		if !ok {
-			log.Panicf("Environmental variable %s doesn't exist!", check[i])
+			log.Fatalf("Environmental variable %s doesn't exist!", check[i])
 		}
 	}
 }
@@ -43,9 +43,10 @@ func main() {
 	routes.InitGeneralRoutes()
 	routes.InitBotRoutes()
 	routes.InitUserRoutes()
+	routes.InitServerRoutes()
 	ip := os.Getenv("ADDR")
 	port := os.Getenv("PORT")
 	serve := fmt.Sprintf("%s:%s", ip, port)
 	log.Infof("Starting to serve at: %s", serve)
-	panic(http.ListenAndServe(fmt.Sprintf("%s:%s", ip, port), util.Router))
+	log.Fatal(http.ListenAndServe(fmt.Sprintf("%s:%s", ip, port), util.Router))
 }
