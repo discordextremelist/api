@@ -1,6 +1,0 @@
-{
-    "mongo": "mongodb://localhost:27017",
-    "redis": "redis://127.0.0.1:6379/5",
-    "port": 3001,
-    "bypassedIPs": []
-}
