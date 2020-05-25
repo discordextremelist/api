@@ -85,7 +85,7 @@ func NewRatelimiter(opts RatelimiterOptions) Ratelimiter {
 func (r *Ratelimiter) cacheAll() int {
 	results, err := util.Database.Redis.HGetAll(r.RPrefix).Result()
 	if err != nil {
-		log.WithField("ratelimiter", r.RPrefix).Fatalf("Failed to get ratelimits!")
+		log.WithField("ratelimiter", r.RPrefix).Panicf("Failed to get ratelimits!")
 	}
 	for key, val := range results {
 		ratelimit := &Ratelimit{}

@@ -21,13 +21,13 @@ func init() {
 			util.Dev = true
 		}
 	}
-	log.SetLevel(log.DebugLevel)
+	log.SetLevel(log.PanicLevel)
 	log.SetFormatter(&log.TextFormatter{ForceColors: true, FullTimestamp: true})
 	_ = godotenv.Load()
 	for i := 0; i < len(check); i++ {
 		_, ok := os.LookupEnv(check[i])
 		if !ok {
-			log.Fatalf("Environmental variable %s doesn't exist!", check[i])
+			log.Panicf("Environmental variable %s doesn't exist!", check[i])
 		}
 	}
 }
