@@ -119,7 +119,7 @@ func LookupUser(id string, clean bool) (error, *entities.User) {
 		user := &entities.User{}
 		err = Json.UnmarshalFromString(redisUser, &user)
 		if err != nil {
-			log.Errorf("Json parsing failed for LookupBot(%s): %v", id, err.Error())
+			log.Errorf("Json parsing failed for LookupUser(%s): %v", id, err.Error())
 			return LookupError, nil
 		} else {
 			if clean {
@@ -165,7 +165,7 @@ func LookupServer(id string, clean bool) (error, *entities.Server) {
 				if err == mongo.ErrNoDocuments {
 					return err, nil
 				}
-				log.Errorf("Fallback for MongoDB failed for LookupUser(%s): %v", id, err.Error())
+				log.Errorf("Fallback for MongoDB failed for LookupServer(%s): %v", id, err.Error())
 				return LookupError, nil
 			} else {
 				if clean {
@@ -180,7 +180,7 @@ func LookupServer(id string, clean bool) (error, *entities.Server) {
 			if err == mongo.ErrNoDocuments {
 				return err, nil
 			}
-			log.Errorf("Json parsing failed for LookupBot(%s): %v", id, err.Error())
+			log.Errorf("Json parsing failed for LookupServer(%s): %v", id, err.Error())
 			return LookupError, nil
 		} else {
 			if clean {
@@ -192,7 +192,7 @@ func LookupServer(id string, clean bool) (error, *entities.Server) {
 		err, server := mongoLookupServer(id)
 		if err != nil {
 			log.Error(err)
-			log.Errorf("Fallback for MongoDB failed for LookupUser(%s): %v", id, err.Error())
+			log.Errorf("Fallback for MongoDB failed for LookupServer(%s): %v", id, err.Error())
 			return LookupError, nil
 		} else {
 			if clean {
