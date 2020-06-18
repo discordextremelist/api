@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"github.com/discordextremelist/api/entities"
 	"github.com/discordextremelist/api/ratelimit"
 	"github.com/discordextremelist/api/util"
 	"github.com/go-chi/chi"
@@ -10,16 +11,16 @@ import (
 )
 
 func GetUser(w http.ResponseWriter, r *http.Request) {
-	err, user := util.LookupUser(chi.URLParam(r, "id"), true)
+	err, user := entities.LookupUser(chi.URLParam(r, "id"), true)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			util.NotFound(w, r)
+			entities.NotFound(w, r)
 		} else {
-			util.WriteErrorResponse(w, err)
+			entities.WriteErrorResponse(w, err)
 		}
 		return
 	}
-	util.WriteUserResponse(w, user)
+	entities.WriteUserResponse(w, user)
 }
 
 func InitUserRoutes() {

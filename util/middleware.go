@@ -5,6 +5,7 @@ import (
 	"github.com/go-chi/chi/middleware"
 	log "github.com/sirupsen/logrus"
 	"net/http"
+	"regexp"
 	"time"
 )
 
@@ -13,20 +14,9 @@ var (
 	XForwardedFor  = http.CanonicalHeaderKey("X-Forwarded-For")
 	XRealIP        = http.CanonicalHeaderKey("X-Real-IP")
 	Authorization  = http.CanonicalHeaderKey("Authorization")
+	ContentType    = http.CanonicalHeaderKey("Content-Type")
+	TokenPattern   = regexp.MustCompile("DELAPI_.{32}-([0-9]{17,20})")
 )
-
-func TokenValidator(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !Dev {
-			auth := r.Header.Get(Authorization)
-			if auth == "" {
-				WriteJson(http.StatusForbidden, w, NoAuthError)
-				return
-			}
-		}
-		next.ServeHTTP(w, r)
-	})
-}
 
 func RealIP(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -63,8 +53,4 @@ func RequestLogger(handler http.Handler) http.Handler {
 		defer doLog(start, ww, r)
 		handler.ServeHTTP(ww, r)
 	})
-}
-
-func NotFound(w http.ResponseWriter, _ *http.Request) {
-	WriteJson(http.StatusNotFound, w, NotFoundError)
 }

@@ -47,9 +47,9 @@ func (manager *Manager) retryRedisConnect() {
 		case <-time.After(backoff):
 			{
 				attempt++
-				backoff = backoff + (5 * time.Second)
+				backoff = backoff + (1 * time.Second)
 				if backoff.Seconds() >= 30 {
-					backoff = 5 * time.Second
+					backoff = 1 * time.Second
 				}
 				if err := manager.Redis.Ping().Err(); err != nil {
 					log.WithField("type", "Redis").Warnf("Retry attempt %d failed!", attempt)
@@ -91,10 +91,10 @@ func (manager *Manager) OpenMongoConnection() {
 	attempt := 0
 	for {
 		if attempt > 0 {
-			backoff = backoff + (5 * time.Second)
+			backoff = backoff + (1 * time.Second)
 		}
 		if backoff.Seconds() > 30 {
-			backoff = 5 * time.Second
+			backoff = 1 * time.Second
 		}
 		attempt++
 		if err := client.Ping(context.Background(), readpref.Primary()); err != nil {
