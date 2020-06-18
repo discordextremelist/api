@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"github.com/discordextremelist/api/entities"
 	"github.com/discordextremelist/api/ratelimit"
 	"github.com/discordextremelist/api/util"
 	"github.com/go-chi/chi"
@@ -9,19 +10,19 @@ import (
 )
 
 func Stats(w http.ResponseWriter, _ *http.Request) {
-	result := util.APIStatsResponse{}
-	err, servers := util.GetAllServers(false)
+	result := entities.APIStatsResponse{}
+	err, servers := entities.GetAllServers(false)
 	if err != nil {
-		util.WriteJson(500, w, util.GetServersFailed)
+		entities.WriteJson(500, w, entities.GetServersFailed)
 		return
 	}
-	result.Servers = util.APIStatsResponseServers{Total: len(servers)}
-	err, bots := util.GetAllBots(false)
+	result.Servers = entities.APIStatsResponseServers{Total: len(servers)}
+	err, bots := entities.GetAllBots(false)
 	if err != nil {
-		util.WriteJson(500, w, util.GetBotsFailed)
+		entities.WriteJson(500, w, entities.GetBotsFailed)
 		return
 	}
-	botRes := util.APIStatsResponseBots{Total: len(bots), Approved: 0, Premium: 0}
+	botRes := entities.APIStatsResponseBots{Total: len(bots), Approved: 0, Premium: 0}
 	for _, bot := range bots {
 		if bot.Status.Approved {
 			botRes.Approved++
@@ -31,12 +32,12 @@ func Stats(w http.ResponseWriter, _ *http.Request) {
 		}
 	}
 	result.Bots = botRes
-	err, users := util.GetAllUsers(false)
+	err, users := entities.GetAllUsers(false)
 	if err != nil {
-		util.WriteJson(500, w, util.GetUsersFailed)
+		entities.WriteJson(500, w, entities.GetUsersFailed)
 		return
 	}
-	userRes := util.APIStatsResponseUsers{Total: len(users), Premium: 0, Staff: util.APIStatsResponseStaff{Total: 0, Mods: 0, Assistants: 0, Admins: 0}}
+	userRes := entities.APIStatsResponseUsers{Total: len(users), Premium: 0, Staff: entities.APIStatsResponseStaff{Total: 0, Mods: 0, Assistants: 0, Admins: 0}}
 	for _, user := range users {
 		if user.Rank.Premium {
 			userRes.Premium++
@@ -58,11 +59,17 @@ func Stats(w http.ResponseWriter, _ *http.Request) {
 		}
 	}
 	result.Users = userRes
-	util.WriteJson(200, w, result)
+	err, templates := entities.GetAllTemplates()
+	if err != nil {
+		entities.WriteJson(500, w, entities.GetTemplatesFailed)
+		return
+	}
+	result.Templates = len(templates)
+	entities.WriteJson(200, w, result)
 }
 
 func Health(w http.ResponseWriter, _ *http.Request) {
-	result := util.APIHealthResponse{
+	result := entities.APIHealthResponse{
 		Status:  200,
 		RedisOK: true,
 		MongoOK: true,
@@ -77,7 +84,7 @@ func Health(w http.ResponseWriter, _ *http.Request) {
 		}
 		result.MongoOK = false
 	}
-	util.WriteJson(result.Status, w, result)
+	entities.WriteJson(result.Status, w, result)
 }
 
 func InitGeneralRoutes() {

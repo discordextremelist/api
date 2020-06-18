@@ -10,8 +10,8 @@ import (
 	"time"
 )
 
-func GetServer(w http.ResponseWriter, r *http.Request) {
-	err, server := entities.LookupServer(chi.URLParam(r, "id"), true)
+func GetTemplate(w http.ResponseWriter, r *http.Request) {
+	err, template := entities.LookupTemplate(chi.URLParam(r, "id"))
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			entities.NotFound(w, r)
@@ -20,21 +20,21 @@ func GetServer(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	entities.WriteServerResponse(w, server)
+	entities.WriteTemplateResponse(w, template)
 }
 
-func InitServerRoutes() {
-	// TODO: Decide on ratelimiting for servers
+func InitTemplateRoutes() {
+	// TODO: Decide on ratelimiting for templates
 	ratelimiter := ratelimit.NewRatelimiter(ratelimit.RatelimiterOptions{
 		Limit:         10,
 		Reset:         10000,
-		RedisPrefix:   "rl_servers",
+		RedisPrefix:   "rl_templates",
 		TempBanLength: 48 * time.Hour,
 		TempBanAfter:  3,
 		PermBanAfter:  2,
 	})
-	util.Router.Route("/server", func(r chi.Router) {
+	util.Router.Route("/template", func(r chi.Router) {
 		r.Use(ratelimiter.Ratelimit)
-		r.Get("/{id}", GetServer)
+		r.Get("/{id}", GetTemplate)
 	})
 }

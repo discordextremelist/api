@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/discordextremelist/api/entities"
 	"github.com/discordextremelist/api/routes"
 	"github.com/discordextremelist/api/util"
 	"github.com/go-chi/chi"
@@ -36,14 +37,15 @@ func main() {
 	util.Database.OpenRedisConnection()
 	util.Database.OpenMongoConnection()
 	util.Router = chi.NewRouter()
-	util.Router.Use(util.TokenValidator)
+	util.Router.Use(entities.TokenValidator)
 	util.Router.Use(util.RealIP)
 	util.Router.Use(util.RequestLogger)
-	util.Router.NotFound(util.NotFound)
+	util.Router.NotFound(entities.NotFound)
 	routes.InitGeneralRoutes()
 	routes.InitBotRoutes()
 	routes.InitUserRoutes()
 	routes.InitServerRoutes()
+	routes.InitTemplateRoutes()
 	ip := os.Getenv("ADDR")
 	port := os.Getenv("PORT")
 	serve := fmt.Sprintf("%s:%s", ip, port)

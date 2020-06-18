@@ -1,6 +1,7 @@
 package ratelimit
 
 import (
+	"github.com/discordextremelist/api/entities"
 	"github.com/discordextremelist/api/util"
 	log "github.com/sirupsen/logrus"
 	"net/http"
@@ -200,9 +201,9 @@ func (r *Ratelimiter) Ratelimit(next http.Handler) http.Handler {
 		if ratelimit.TotalBans > 0 && (ratelimit.TempBannedAt > 0 || ratelimit.PermBannedAt > 0) {
 			writer.WriteHeader(http.StatusForbidden)
 			if !ratelimit.TempBan {
-				util.Json.NewEncoder(writer).Encode(util.PermBannedError)
+				util.Json.NewEncoder(writer).Encode(entities.PermBannedError)
 			} else {
-				util.Json.NewEncoder(writer).Encode(util.TempBannedError)
+				util.Json.NewEncoder(writer).Encode(entities.TempBannedError)
 			}
 			return
 		}
@@ -211,7 +212,7 @@ func (r *Ratelimiter) Ratelimit(next http.Handler) http.Handler {
 		if left <= 0 {
 			headers.Set("Retry-After", strconv.FormatInt(r.NextReset.Sub(time.Now()).Milliseconds(), 10))
 			writer.WriteHeader(http.StatusTooManyRequests)
-			util.Json.NewEncoder(writer).Encode(util.RatelimitedError)
+			util.Json.NewEncoder(writer).Encode(entities.RatelimitedError)
 			return
 		}
 		headers.Set("X-RateLimit-Limit", strconv.Itoa(r.Limit))

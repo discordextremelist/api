@@ -1,5 +1,13 @@
 package entities
 
+import (
+	"context"
+	"github.com/discordextremelist/api/util"
+	log "github.com/sirupsen/logrus"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+)
+
 type UserPreferences struct {
 	CustomGlobalCSS         string `json:"customGlobalCss"`
 	DefaultColour           string `json:"defaultColour"`
@@ -109,4 +117,100 @@ func CleanupUser(rank UserRank, user *User) *User {
 		copied.Rank.Premium = user.Rank.Premium
 	}
 	return &copied
+}
+
+func mongoLookupUser(id string) (error, *User) {
+	res := util.Database.Mongo.Collection("users").FindOne(context.TODO(), bson.M{"_id": id})
+	if res.Err() != nil {
+		return res.Err(), nil
+	}
+	user := User{}
+	if err := res.Decode(&user); err != nil {
+		return err, nil
+	}
+	return nil, &user
+}
+
+func LookupUser(id string, clean bool) (error, *User) {
+	redisUser, err := util.Database.Redis.HGet("users", id).Result()
+	if err != nil {
+		if redisUser == "" {
+			err, user := mongoLookupUser(id)
+			if err != nil {
+				if err == mongo.ErrNoDocuments {
+					return err, nil
+				}
+				log.Errorf("Fallback for MongoDB failed for LookupUser(%s): %v", id, err.Error())
+				return LookupError, nil
+			} else {
+				if clean {
+					user = CleanupUser(fakeRank, user)
+				}
+				return nil, user
+			}
+		}
+		user := &User{}
+		err = util.Json.UnmarshalFromString(redisUser, &user)
+		if err != nil {
+			log.Errorf("Json parsing failed for LookupUser(%s): %v", id, err.Error())
+			return LookupError, nil
+		} else {
+			if clean {
+				user = CleanupUser(fakeRank, user)
+			}
+			return nil, user
+		}
+	} else {
+		err, user := mongoLookupUser(id)
+		if err != nil {
+			if err == mongo.ErrNoDocuments {
+				return err, nil
+			}
+			log.Errorf("Fallback for MongoDB failed for LookupUser(%s): %v", id, err.Error())
+			return LookupError, nil
+		} else {
+			if clean {
+				user = CleanupUser(fakeRank, user)
+			}
+			return nil, user
+		}
+	}
+}
+
+func GetAllUsers(clean bool) (error, []User) {
+	redisUsers, err := util.Database.Redis.HVals("users").Result()
+	if err != nil && len(redisUsers) > 0 {
+		actual := make([]User, len(redisUsers))
+		for _, str := range redisUsers {
+			user := User{}
+			err = util.Json.UnmarshalFromString(str, &user)
+			if err != nil {
+				continue
+			}
+			if clean {
+				user = *CleanupUser(fakeRank, &user)
+			}
+			actual = append(actual, user)
+		}
+		return nil, actual
+	} else {
+		cursor, err := util.Database.Mongo.Collection("users").Find(context.TODO(), bson.M{})
+		if err != nil {
+			return err, nil
+		}
+		var actual []User
+		defer cursor.Close(context.TODO())
+		for cursor.Next(context.TODO()) {
+			user := User{}
+			err = cursor.Decode(&user)
+			if err != nil {
+				continue
+			}
+			if clean {
+				user = *CleanupUser(fakeRank, &user)
+			}
+			actual = append(actual, user)
+		}
+		return nil, actual
+	}
 }
