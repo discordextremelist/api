@@ -7,6 +7,7 @@ import (
 )
 
 type APIHealthResponse struct {
+	Error   bool `json:"error"`
 	Status  int  `json:"status"`
 	RedisOK bool `json:"redis_ok"`
 	MongoOK bool `json:"mongo_ok"`
@@ -36,6 +37,8 @@ type APIStatsResponseStaff struct {
 }
 
 type APIStatsResponse struct {
+	Status    int                     `json:"status"`
+	Error     bool                    `json:"error"`
 	Servers   APIStatsResponseServers `json:"servers"`
 	Bots      APIStatsResponseBots    `json:"bots"`
 	Users     APIStatsResponseUsers   `json:"users"`
@@ -119,6 +122,10 @@ func WriteNotImplementedResponse(w http.ResponseWriter) {
 // DELAPI_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-000000000000000000
 func TokenValidator(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/health" {
+			next.ServeHTTP(w, r)
+			return
+		}
 		auth := r.Header.Get(util.Authorization)
 		if auth != "" && !util.Dev {
 			matches := util.TokenPattern.FindStringSubmatch(auth)

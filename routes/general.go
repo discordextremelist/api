@@ -65,22 +65,27 @@ func Stats(w http.ResponseWriter, _ *http.Request) {
 		return
 	}
 	result.Templates = len(templates)
+	result.Status = 200
+	result.Error = false
 	entities.WriteJson(200, w, result)
 }
 
 func Health(w http.ResponseWriter, _ *http.Request) {
 	result := entities.APIHealthResponse{
 		Status:  200,
+		Error:   false,
 		RedisOK: true,
 		MongoOK: true,
 	}
 	if !util.Database.IsRedisOpen() {
 		result.Status = http.StatusServiceUnavailable
+		result.Error = true
 		result.RedisOK = false
 	}
 	if !util.Database.IsMongoOpen() {
 		if result.Status != http.StatusServiceUnavailable {
 			result.Status = http.StatusServiceUnavailable
+			result.Error = true
 		}
 		result.MongoOK = false
 	}
@@ -90,9 +95,9 @@ func Health(w http.ResponseWriter, _ *http.Request) {
 func InitGeneralRoutes() {
 	ratelimiter := ratelimit.NewRatelimiter(ratelimit.RatelimiterOptions{
 		Limit:         3,
-		Reset:         1000,
+		Reset:         5000,
 		RedisPrefix:   "rl_general",
-		TempBanLength: 48 * time.Hour,
+		TempBanLength: 1 * time.Hour,
 		TempBanAfter:  3,
 		PermBanAfter:  2,
 	})
