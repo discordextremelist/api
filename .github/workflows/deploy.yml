@@ -1,0 +1,23 @@
+name: Production
+on:
+  release:
+    types:
+      - created
+jobs:
+  autoupdate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy
+        uses: garygrossgarten/github-action-ssh@release
+        with:
+          command: |
+            cd ~/api
+            git pull
+            go get
+            go build
+            pm2 reload DEL-API
+          host: ${{ secrets.HOST }}
+          username: cairo
+          privateKey: ${{ secrets.PRIVATE_KEY }}
+        env:
+          CI: true
