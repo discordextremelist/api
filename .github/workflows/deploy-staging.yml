@@ -4,7 +4,7 @@ on:
     branches:
       - master
 jobs:
-  autoupdate:
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Staging Deploy

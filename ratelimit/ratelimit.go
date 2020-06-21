@@ -198,7 +198,9 @@ func (r *Ratelimiter) overwrite(key string, ratelimit Ratelimit) {
 func (r *Ratelimiter) Ratelimit(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(writer http.ResponseWriter, req *http.Request) {
 		ratelimit := r.getRatelimit(req.RemoteAddr)
+		headers := writer.Header()
 		if ratelimit.TotalBans > 0 && (ratelimit.TempBannedAt > 0 || ratelimit.PermBannedAt > 0) {
+			headers.Set("Content-Type", "application/json")
 			writer.WriteHeader(http.StatusForbidden)
 			if !ratelimit.TempBan {
 				util.Json.NewEncoder(writer).Encode(entities.PermBannedError)
@@ -207,9 +209,9 @@ func (r *Ratelimiter) Ratelimit(next http.Handler) http.Handler {
 			}
 			return
 		}
-		headers := writer.Header()
 		left := r.Limit - ratelimit.Current
 		if left <= 0 {
+			headers.Set("Content-Type", "application/json")
 			headers.Set("Retry-After", strconv.FormatInt(r.NextReset.Sub(time.Now()).Milliseconds(), 10))
 			writer.WriteHeader(http.StatusTooManyRequests)
 			util.Json.NewEncoder(writer).Encode(entities.RatelimitedError)

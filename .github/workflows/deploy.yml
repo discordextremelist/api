@@ -4,7 +4,7 @@ on:
     types:
       - created
 jobs:
-  autoupdate:
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Deploy
