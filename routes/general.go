@@ -10,7 +10,7 @@ import (
 )
 
 func Stats(w http.ResponseWriter, _ *http.Request) {
-	result := entities.APIStatsResponse{}
+	result := entities.APIStatsResponse{Status: 200, Error: false}
 	err, servers := entities.GetAllServers(false)
 	if err != nil {
 		entities.WriteJson(500, w, entities.GetServersFailed)
@@ -65,8 +65,6 @@ func Stats(w http.ResponseWriter, _ *http.Request) {
 		return
 	}
 	result.Templates = len(templates)
-	result.Status = 200
-	result.Error = false
 	entities.WriteJson(200, w, result)
 }
 
