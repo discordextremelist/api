@@ -68,7 +68,6 @@ func UpdateStats(w http.ResponseWriter, r *http.Request) {
 			}
 			return
 		}
-		log.Info(r.Header.Get(util.Authorization), bot.Token, r.Header.Get(util.Authorization) == bot.Token)
 		if !util.Dev && (r.Header.Get(util.Authorization) != bot.Token) {
 			entities.BadAuth(w, r)
 			return
