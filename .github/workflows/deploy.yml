@@ -11,7 +11,7 @@ jobs:
         uses: garygrossgarten/github-action-ssh@release
         with:
           command: |
-            cd ~/api
+            cd ~/api-stable
             git pull
             go get
             go build
