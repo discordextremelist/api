@@ -10,6 +10,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"os"
+	"strings"
 )
 
 var (
@@ -26,9 +27,22 @@ func init() {
 	log.SetFormatter(&log.TextFormatter{ForceColors: true, FullTimestamp: true})
 	_ = godotenv.Load()
 	for i := 0; i < len(check); i++ {
-		_, ok := os.LookupEnv(check[i])
-		if !ok {
-			log.Fatalf("Environmental variable %s doesn't exist!", check[i])
+		if _, ok := os.LookupEnv(check[i]); !ok {
+			log.Fatalf("Required environmental variable '%s' doesn't exist!", check[i])
+		}
+	}
+	wl, ok := os.LookupEnv("IP_WHITELIST")
+	if ok && wl != "" {
+		ips := strings.Split(wl, ";")
+		for _, ip := range ips {
+			if ip != "" {
+				util.IPWhitelist = append(util.IPWhitelist, ip)
+			}
+		}
+		if len(util.IPWhitelist) == 1 {
+			log.Debugf("Cached %d whitelisted IP address!", len(util.IPWhitelist))
+		} else {
+			log.Debugf("Cached %d whitelisted IP addresses!", len(util.IPWhitelist))
 		}
 	}
 }
@@ -39,8 +53,8 @@ func main() {
 	util.Router = chi.NewRouter()
 	util.Router.Use(util.RealIP)
 	util.Router.Use(util.RequestLogger)
-	util.Router.Use(entities.TokenValidator)
 	util.Router.NotFound(entities.NotFound)
+	util.Router.Use(entities.TokenValidator)
 	routes.InitGeneralRoutes()
 	routes.InitBotRoutes()
 	routes.InitUserRoutes()

@@ -7,8 +7,18 @@ import (
 )
 
 var (
-	Database = database.NewManager()
-	Json     = jsoniter.ConfigFastest
-	Router   chi.Router
-	Dev      bool
+	IPWhitelist []string
+	Database    = database.NewManager()
+	Json        = jsoniter.ConfigFastest
+	Router      chi.Router
+	Dev         bool
 )
+
+func CheckIP(remoteAddr string) bool {
+	for _, ip := range IPWhitelist {
+		if remoteAddr == ip {
+			return true
+		}
+	}
+	return false
+}

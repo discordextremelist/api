@@ -122,7 +122,7 @@ func WriteNotImplementedResponse(w http.ResponseWriter) {
 // DELAPI_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-000000000000000000
 func TokenValidator(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/health" {
+		if r.URL.Path == "/health" || util.CheckIP(r.RemoteAddr) {
 			next.ServeHTTP(w, r)
 			return
 		}

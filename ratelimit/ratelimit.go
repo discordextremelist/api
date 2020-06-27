@@ -74,10 +74,9 @@ func NewRatelimiter(opts RatelimiterOptions) Ratelimiter {
 		TempBanAfter:  opts.TempBanAfter,
 		PermBanAfter:  opts.PermBanAfter,
 	}
-	log.WithField("ratelimiter", opts.RedisPrefix).Info("Starting to cache all ratelimits")
 	s := time.Now()
 	count := rl.cacheAll()
-	log.WithField("ratelimiter", opts.RedisPrefix).Infof("Caching %d ratelimit(s) took: %v", count, time.Now().Sub(s))
+	log.WithField("ratelimiter", opts.RedisPrefix).Debugf("Caching %d ratelimit(s) took: %v", count, time.Now().Sub(s))
 	go rl.resetRatelimits()
 	go rl.resetTempBans()
 	return rl
@@ -197,6 +196,10 @@ func (r *Ratelimiter) overwrite(key string, ratelimit Ratelimit) {
 
 func (r *Ratelimiter) Ratelimit(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(writer http.ResponseWriter, req *http.Request) {
+		if util.CheckIP(req.RemoteAddr) {
+			next.ServeHTTP(writer, req)
+			return
+		}
 		ratelimit := r.getRatelimit(req.RemoteAddr)
 		headers := writer.Header()
 		if ratelimit.TotalBans > 0 && (ratelimit.TempBannedAt > 0 || ratelimit.PermBannedAt > 0) {
