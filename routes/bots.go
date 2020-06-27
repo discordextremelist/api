@@ -6,7 +6,6 @@ import (
 	"github.com/discordextremelist/api/ratelimit"
 	"github.com/discordextremelist/api/util"
 	"github.com/go-chi/chi"
-	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"io/ioutil"
