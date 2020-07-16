@@ -24,7 +24,6 @@ func GetTemplate(w http.ResponseWriter, r *http.Request) {
 }
 
 func InitTemplateRoutes() {
-	// TODO: Decide on ratelimiting for templates
 	ratelimiter := ratelimit.NewRatelimiter(ratelimit.RatelimiterOptions{
 		Limit:         10,
 		Reset:         10000,
