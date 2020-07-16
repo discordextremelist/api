@@ -24,7 +24,6 @@ func GetServer(w http.ResponseWriter, r *http.Request) {
 }
 
 func InitServerRoutes() {
-	// TODO: Decide on ratelimiting for servers
 	ratelimiter := ratelimit.NewRatelimiter(ratelimit.RatelimiterOptions{
 		Limit:         10,
 		Reset:         10000,
