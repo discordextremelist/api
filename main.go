@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	check = []string{"ADDR", "PORT", "REDIS_IP", "REDIS_PORT", "REDIS_PASSWORD", "REDIS_DB", "MONGO_URL", "MONGO_DB"}
+	check = []string{"ADDR", "PORT", "REDIS_PASSWORD", "REDIS_DB", "MONGO_URL", "MONGO_DB"}
 )
 
 func init() {

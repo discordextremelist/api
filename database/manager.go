@@ -10,6 +10,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -63,21 +64,33 @@ func (manager *Manager) retryRedisConnect() {
 }
 
 func (manager *Manager) OpenRedisConnection() {
-	ip := os.Getenv("REDIS_IP")
-	port := os.Getenv("REDIS_PORT")
 	db, err := strconv.Atoi(os.Getenv("REDIS_DB"))
 	if err != nil {
 		log.WithField("type", "Redis").Fatal("Failed to convert type string to type int")
 	}
 	pass := os.Getenv("REDIS_PASSWORD")
-	manager.Redis = redis.NewClient(&redis.Options{
-		Addr:         fmt.Sprintf("%s:%s", ip, port),
-		Password:     pass,
-		DB:           db,
-		DialTimeout:  10 * time.Second,
-		ReadTimeout:  15 * time.Second,
-		WriteTimeout: 15 * time.Second,
-	})
+	if sentinels := os.Getenv("REDIS_SENTINELS"); len(sentinels) > 0 {
+		var splitSentinels = strings.Split(sentinels, ";")
+		manager.Redis = redis.NewFailoverClient(&redis.FailoverOptions{
+			SentinelAddrs: splitSentinels,
+			Password:      pass,
+			DB:            db,
+			DialTimeout:   10 * time.Second,
+			ReadTimeout:   15 * time.Second,
+			WriteTimeout:  15 * time.Second,
+		})
+	} else {
+		ip := os.Getenv("REDIS_IP")
+		port := os.Getenv("REDIS_PORT")
+		manager.Redis = redis.NewClient(&redis.Options{
+			Addr:         fmt.Sprintf("%s:%s", ip, port),
+			Password:     pass,
+			DB:           db,
+			DialTimeout:  10 * time.Second,
+			ReadTimeout:  15 * time.Second,
+			WriteTimeout: 15 * time.Second,
+		})
+	}
 	manager.retryRedisConnect()
 }
 
