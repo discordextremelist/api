@@ -1,24 +1,28 @@
-name: Production
+name: Deploy
 on:
-  release:
-    types:
-      - created
+    push:
+        tags:
+            - "v*-Release"
 jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy
-        uses: garygrossgarten/github-action-ssh@release
-        with:
-          command: |
-            cd ~/api-stable
-            git pull
-            go get
-            go build
-            pm2 reload DEL-API
-          host: ${{ secrets.HOST }}
-          username: cairo
-          privateKey: ${{ secrets.PRIVATE_KEY }}
-          passphrase: ${{ secrets.PASSPHRASE }}
-        env:
-          CI: true
+    build:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v2
+            - name: Login
+              run: echo "${{secrets.DOCKER_PASSWORD}}" | docker login ${{secrets.DOCKER_URL}} -u admin --password-stdin
+            - name: Build
+              run: docker build -t ${{ secrets.DOCKER_URL }}/del/api:${GITHUB_REF#refs/tags/} .
+            - name: Push
+              run: docker push ${{ secrets.DOCKER_URL }}/del/api:${GITHUB_REF#refs/tags/}
+    deploy:
+        needs: build
+        runs-on: ubuntu-latest
+        steps:
+            - name: Login
+              run: |
+                  mkdir ~/.kube
+                  echo "${{ secrets.KUBE_CONFIG }}" > ~/.kube/config
+            - name: Set image
+              run: kubectl set image deployment/api api=${{ secrets.DOCKER_URL }}/del/api:${GITHUB_REF#refs/tags/}
+            - name: Rollout status
+              run: kubectl rollout status deployment/api
