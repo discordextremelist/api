@@ -73,6 +73,7 @@ func (manager *Manager) OpenRedisConnection() {
 		var splitSentinels = strings.Split(sentinels, ";")
 		manager.Redis = redis.NewFailoverClient(&redis.FailoverOptions{
 			SentinelAddrs: splitSentinels,
+			MasterName:    os.Getenv("REDIS_MASTER"),
 			Password:      pass,
 			DB:            db,
 			DialTimeout:   10 * time.Second,
