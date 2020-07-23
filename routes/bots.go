@@ -123,7 +123,7 @@ func InitBotRoutes() {
 	fallbackRatelimiter = ratelimit.NewRatelimiter(ratelimit.RatelimiterOptions{
 		Limit:         10,
 		Reset:         10000,
-		RedisPrefix:   "rl_bots",
+		RedisPrefix:   "rl_bots_fallback",
 		TempBanAfter:  2,
 		PermBanAfter:  2,
 		TempBanLength: 24 * time.Hour,
