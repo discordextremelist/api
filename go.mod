@@ -3,18 +3,18 @@ module github.com/discordextremelist/api
 go 1.14
 
 require (
-	github.com/go-chi/chi v4.1.1+incompatible
-	github.com/go-redis/redis/v7 v7.2.0
-	github.com/golang/protobuf v1.4.0 // indirect
+	github.com/go-chi/chi v4.1.2+incompatible
+	github.com/go-redis/redis/v8 v8.0.0-beta.7
 	github.com/joho/godotenv v1.3.0
-	github.com/json-iterator/go v1.1.9
+	github.com/json-iterator/go v1.1.10
 	github.com/klauspost/compress v1.10.5 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.1 // indirect
-	github.com/sirupsen/logrus v1.5.0
-	github.com/stretchr/testify v1.4.0 // indirect
-	go.mongodb.org/mongo-driver v1.3.2
+	github.com/sirupsen/logrus v1.6.0
+	go.mongodb.org/mongo-driver v1.4.0
+	go.opentelemetry.io/otel v0.10.0 // indirect
 	golang.org/x/net v0.0.0-20200324143707-d3edc9973b7e // indirect
-	golang.org/x/sys v0.0.0-20200413165638-669c56c373c4 // indirect
+	golang.org/x/sys v0.0.0-20200810151505-1b9f1253b3ed // indirect
+	google.golang.org/grpc v1.31.0 // indirect
 	gopkg.in/yaml.v2 v2.2.8 // indirect
 )

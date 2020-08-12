@@ -3,7 +3,7 @@ package database
 import (
 	"context"
 	"fmt"
-	"github.com/go-redis/redis/v7"
+	"github.com/go-redis/redis/v8"
 	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -27,7 +27,7 @@ func NewManager() Manager {
 }
 
 func (manager *Manager) IsRedisOpen() bool {
-	if err := manager.Redis.Ping().Err(); err != nil {
+	if err := manager.Redis.Ping(context.Background()).Err(); err != nil {
 		return false
 	}
 	return true
@@ -52,7 +52,7 @@ func (manager *Manager) retryRedisConnect() {
 				if backoff.Seconds() >= 30 {
 					backoff = 1 * time.Second
 				}
-				if err := manager.Redis.Ping().Err(); err != nil {
+				if err := manager.Redis.Ping(context.Background()).Err(); err != nil {
 					log.WithField("type", "Redis").Warnf("Retry attempt %d failed!", attempt)
 				} else {
 					log.WithField("type", "Redis").Infof("Connected on attempt %d!", attempt)

@@ -50,7 +50,7 @@ func mongoLookupServer(id string) (error, *Server) {
 }
 
 func LookupServer(id string, clean bool) (error, *Server) {
-	redisServer, err := util.Database.Redis.HGet("servers", id).Result()
+	redisServer, err := util.Database.Redis.HGet(context.TODO(), "servers", id).Result()
 	if err != nil {
 		if redisServer == "" {
 			err, server := mongoLookupServer(id)
@@ -97,7 +97,7 @@ func LookupServer(id string, clean bool) (error, *Server) {
 }
 
 func GetAllServers(clean bool) (error, []Server) {
-	redisServers, err := util.Database.Redis.HVals("servers").Result()
+	redisServers, err := util.Database.Redis.HVals(context.TODO(), "servers").Result()
 	if err != nil && len(redisServers) > 0 {
 		actual := make([]Server, len(redisServers))
 		for _, str := range redisServers {

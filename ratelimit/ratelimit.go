@@ -1,6 +1,7 @@
 package ratelimit
 
 import (
+	"context"
 	"github.com/discordextremelist/api/entities"
 	"github.com/discordextremelist/api/util"
 	log "github.com/sirupsen/logrus"
@@ -83,7 +84,7 @@ func NewRatelimiter(opts RatelimiterOptions) Ratelimiter {
 }
 
 func (r *Ratelimiter) cacheAll() int {
-	results, err := util.Database.Redis.HGetAll(r.RPrefix).Result()
+	results, err := util.Database.Redis.HGetAll(context.TODO(), r.RPrefix).Result()
 	if err != nil {
 		log.WithField("ratelimiter", r.RPrefix).Fatalf("Failed to get ratelimits!")
 	}
@@ -115,7 +116,7 @@ func (r *Ratelimiter) cacheRatelimit(key string, ratelimit Ratelimit) {
 	}
 	if util.Database.IsRedisOpen() {
 		str, _ := util.Json.MarshalToString(&ratelimit)
-		util.Database.Redis.HMSet(r.RPrefix, key, str)
+		util.Database.Redis.HMSet(context.TODO(), r.RPrefix, key, str)
 	}
 }
 

@@ -85,7 +85,7 @@ func mongoLookupBot(id string) (error, *Bot) {
 }
 
 func LookupBot(id string, clean bool) (error, *Bot) {
-	redisBot, err := util.Database.Redis.HGet("bots", id).Result()
+	redisBot, err := util.Database.Redis.HGet(context.TODO(), "bots", id).Result()
 	if err != nil {
 		if redisBot == "" {
 			err, bot := mongoLookupBot(id)
@@ -131,7 +131,7 @@ func LookupBot(id string, clean bool) (error, *Bot) {
 }
 
 func GetAllBots(clean bool) (error, []Bot) {
-	redisBots, err := util.Database.Redis.HVals("bots").Result()
+	redisBots, err := util.Database.Redis.HVals(context.TODO(), "bots").Result()
 	if err != nil && len(redisBots) > 0 {
 		actual := make([]Bot, len(redisBots))
 		for _, str := range redisBots {

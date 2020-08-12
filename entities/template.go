@@ -77,7 +77,7 @@ func mongoLookupTemplate(id string) (error, *ServerTemplate) {
 }
 
 func LookupTemplate(id string) (error, *ServerTemplate) {
-	redisTemplate, err := util.Database.Redis.HGet("templates", id).Result()
+	redisTemplate, err := util.Database.Redis.HGet(context.TODO(), "templates", id).Result()
 	if err != nil {
 		if redisTemplate == "" {
 			err, template := mongoLookupTemplate(id)
@@ -114,7 +114,7 @@ func LookupTemplate(id string) (error, *ServerTemplate) {
 }
 
 func GetAllTemplates() (error, []ServerTemplate) {
-	redisTemplates, err := util.Database.Redis.HVals("templates").Result()
+	redisTemplates, err := util.Database.Redis.HVals(context.TODO(), "templates").Result()
 	if err != nil && len(redisTemplates) > 0 {
 		actual := make([]ServerTemplate, len(redisTemplates))
 		for _, str := range redisTemplates {

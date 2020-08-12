@@ -89,7 +89,7 @@ func UpdateStats(w http.ResponseWriter, r *http.Request) {
 			entities.WriteErrorResponse(w, err)
 			return
 		}
-		err = util.Database.Redis.HMSet("bots", bot.ID, marshaled).Err()
+		err = util.Database.Redis.HMSet(context.TODO(), "bots", bot.ID, marshaled).Err()
 		if err != nil {
 			entities.WriteErrorResponse(w, err)
 			return
