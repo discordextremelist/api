@@ -51,7 +51,7 @@ func mongoLookupServer(id string) (error, *Server) {
 
 func LookupServer(id string, clean bool) (error, *Server) {
 	redisServer, err := util.Database.Redis.HGet(context.TODO(), "servers", id).Result()
-	if err != nil {
+	if err == nil {
 		if redisServer == "" {
 			err, server := mongoLookupServer(id)
 			if err != nil {
@@ -84,7 +84,9 @@ func LookupServer(id string, clean bool) (error, *Server) {
 	} else {
 		err, server := mongoLookupServer(id)
 		if err != nil {
-			log.Error(err)
+			if err == mongo.ErrNoDocuments {
+				return err, nil
+			}
 			log.Errorf("Fallback for MongoDB failed for LookupServer(%s): %v", id, err.Error())
 			return LookupError, nil
 		} else {
@@ -98,8 +100,8 @@ func LookupServer(id string, clean bool) (error, *Server) {
 
 func GetAllServers(clean bool) (error, []Server) {
 	redisServers, err := util.Database.Redis.HVals(context.TODO(), "servers").Result()
-	if err != nil && len(redisServers) > 0 {
-		actual := make([]Server, len(redisServers))
+	if err == nil && len(redisServers) > 0 {
+		var actual []Server
 		for _, str := range redisServers {
 			server := Server{}
 			err = util.Json.UnmarshalFromString(str, &server)

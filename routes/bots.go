@@ -16,6 +16,7 @@ import (
 
 var (
 	botRatelimiter        ratelimit.Ratelimiter
+	botsRatelimiter       ratelimit.Ratelimiter
 	premiumBotRatelimiter ratelimit.Ratelimiter
 	fallbackRatelimiter   ratelimit.Ratelimiter
 )
@@ -31,6 +32,19 @@ func Bot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	entities.WriteBotResponse(w, bot)
+}
+
+func Bots(w http.ResponseWriter, _ *http.Request) {
+	err, bots := entities.GetAllBots(true)
+	if err != nil {
+		entities.WriteErrorResponse(w, err)
+		return
+	}
+	entities.WriteJson(200, w, entities.APIResponseBots{
+		Error:  false,
+		Status: 200,
+		Bots:   bots,
+	})
 }
 
 // TODO: Widget
@@ -112,6 +126,14 @@ func InitBotRoutes() {
 		PermBanAfter:  2,
 		TempBanLength: 24 * time.Hour,
 	})
+	botsRatelimiter = ratelimit.NewRatelimiter(ratelimit.RatelimiterOptions{
+		Limit:         5,
+		Reset:         60000,
+		RedisPrefix:   "rl_bots",
+		TempBanAfter:  3,
+		PermBanAfter:  3,
+		TempBanLength: 24 * time.Hour,
+	})
 	premiumBotRatelimiter = ratelimit.NewRatelimiter(ratelimit.RatelimiterOptions{
 		Limit:         20,
 		Reset:         10000,
@@ -127,6 +149,10 @@ func InitBotRoutes() {
 		TempBanAfter:  2,
 		PermBanAfter:  2,
 		TempBanLength: 24 * time.Hour,
+	})
+	util.Router.Route("/bots", func(r chi.Router) {
+		r.Use(botsRatelimiter.Ratelimit)
+		r.Get("/", Bots)
 	})
 	util.Router.Route("/bot/{id}", func(r chi.Router) {
 		r.Use(entities.TokenValidator)

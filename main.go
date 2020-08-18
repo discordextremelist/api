@@ -50,6 +50,9 @@ func init() {
 func main() {
 	util.Database.OpenRedisConnection()
 	util.Database.OpenMongoConnection()
+	if util.Dev {
+		entities.PopulateDevCache()
+	}
 	util.Router = chi.NewRouter()
 	util.Router.Use(util.RealIP)
 	util.Router.Use(util.RequestLogger)

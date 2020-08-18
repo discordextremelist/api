@@ -133,7 +133,7 @@ func mongoLookupUser(id string) (error, *User) {
 
 func LookupUser(id string, clean bool) (error, *User) {
 	redisUser, err := util.Database.Redis.HGet(context.TODO(), "users", id).Result()
-	if err != nil {
+	if err == nil {
 		if redisUser == "" {
 			err, user := mongoLookupUser(id)
 			if err != nil {
@@ -179,8 +179,8 @@ func LookupUser(id string, clean bool) (error, *User) {
 
 func GetAllUsers(clean bool) (error, []User) {
 	redisUsers, err := util.Database.Redis.HVals(context.TODO(), "users").Result()
-	if err != nil && len(redisUsers) > 0 {
-		actual := make([]User, len(redisUsers))
+	if err == nil && len(redisUsers) > 0 {
+		var actual []User
 		for _, str := range redisUsers {
 			user := User{}
 			err = util.Json.UnmarshalFromString(str, &user)

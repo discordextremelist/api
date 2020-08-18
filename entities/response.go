@@ -55,6 +55,12 @@ type APIResponse struct {
 	Template *ServerTemplate `json:"template,omitempty"`
 }
 
+type APIResponseBots struct {
+	Error  bool  `json:"error"`
+	Status int   `json:"status"`
+	Bots   []Bot `json:"bots"`
+}
+
 func buildInternal(error bool, status int, message string, bot *Bot, server *Server, user *User, template *ServerTemplate) APIResponse {
 	ptr := &message
 	if message == "" {
@@ -77,8 +83,8 @@ var (
 	PermBannedError    = buildInternal(true, 403, "You've been permanently API banned!", nil, nil, nil, nil)
 	NotFoundError      = buildInternal(true, 404, "Not Found", nil, nil, nil, nil)
 	NoAuthError        = buildInternal(true, 403, `No "Authorization" header specified, or it was invalid!`, nil, nil, nil, nil)
-	LookupError        = errors.New("An error occurred when looking up this resource, try again later!")
-	ReadFailed         = errors.New("Failed to read request body!")
+	LookupError        = errors.New("an error occurred when looking up this resource")
+	ReadFailed         = errors.New("failed to read request body")
 	notImplemented     = buildInternal(true, 501, "Not implemented", nil, nil, nil, nil)
 	GetServersFailed   = buildInternal(true, 500, "An error occurred when getting all servers, try again later!", nil, nil, nil, nil)
 	GetBotsFailed      = buildInternal(true, 500, "An error occurred when getting all bots, try again later!", nil, nil, nil, nil)
