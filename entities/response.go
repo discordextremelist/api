@@ -3,8 +3,12 @@ package entities
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/discordextremelist/api/util"
+	"github.com/go-chi/chi/middleware"
+	log "github.com/sirupsen/logrus"
 	"net/http"
+	"time"
 )
 
 type APIHealthResponse struct {
@@ -94,10 +98,44 @@ var (
 	BadContentType     = buildInternal(true, 415, "Unsupported Content Type, or non was provided!", nil, nil, nil, nil)
 )
 
+func doLog(start time.Time, w middleware.WrapResponseWriter, r *http.Request) {
+	ResponseTimes = append(ResponseTimes, ResponseTime{
+		Path:                 r.URL.String(),
+		TimeSpentWritingBody: time.Since(start).Microseconds(),
+	})
+	log.Info(fmt.Sprintf(
+		`%s - "%s %s %s" %d %d %s`,
+		r.RemoteAddr,
+		r.Method,
+		r.URL,
+		r.Proto,
+		w.BytesWritten(),
+		w.Status(),
+		time.Since(start),
+	))
+}
+
+func RequestLogger(handler http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
+		defer doLog(start, ww, r)
+		handler.ServeHTTP(ww, r)
+	})
+}
+
 func WriteJson(status int, writer http.ResponseWriter, v interface{}) {
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(status)
 	json.NewEncoder(writer).Encode(v)
+}
+
+func WritePrettyJson(status int, writer http.ResponseWriter, v interface{}) {
+	writer.Header().Set("Content-Type", "application/json")
+	writer.WriteHeader(status)
+	encoder := json.NewEncoder(writer)
+	encoder.SetIndent("", "    ")
+	encoder.Encode(v)
 }
 
 func WriteErrorResponse(w http.ResponseWriter, err error) {
@@ -129,7 +167,7 @@ func WriteNotImplementedResponse(w http.ResponseWriter) {
 // DELAPI_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-000000000000000000
 func TokenValidator(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/health" || util.CheckIP(r.RemoteAddr) {
+		if r.URL.Path == "/health" || r.URL.Path == "/debug" || util.CheckIP(r.RemoteAddr) {
 			next.ServeHTTP(w, r)
 			return
 		}

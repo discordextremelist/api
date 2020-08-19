@@ -55,7 +55,7 @@ func main() {
 	}
 	util.Router = chi.NewRouter()
 	util.Router.Use(util.RealIP)
-	util.Router.Use(util.RequestLogger)
+	util.Router.Use(entities.RequestLogger)
 	util.Router.NotFound(entities.NotFound)
 	util.Router.Use(entities.TokenValidator)
 	routes.InitGeneralRoutes()
@@ -63,6 +63,7 @@ func main() {
 	routes.InitUserRoutes()
 	routes.InitServerRoutes()
 	routes.InitTemplateRoutes()
+	routes.InitDebugRoutes()
 	ip := os.Getenv("ADDR")
 	port := os.Getenv("PORT")
 	serve := fmt.Sprintf("%s:%s", ip, port)

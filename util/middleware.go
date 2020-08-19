@@ -1,12 +1,8 @@
 package util
 
 import (
-	"fmt"
-	"github.com/go-chi/chi/middleware"
-	log "github.com/sirupsen/logrus"
 	"net/http"
 	"regexp"
-	"time"
 )
 
 var (
@@ -30,27 +26,5 @@ func RealIP(handler http.Handler) http.Handler {
 			r.RemoteAddr = "127.0.0.1"
 		}
 		handler.ServeHTTP(w, r)
-	})
-}
-
-func doLog(start time.Time, w middleware.WrapResponseWriter, r *http.Request) {
-	log.Info(fmt.Sprintf(
-		`%s - "%s %s %s" %d %d %s`,
-		r.RemoteAddr,
-		r.Method,
-		r.URL,
-		r.Proto,
-		w.BytesWritten(),
-		w.Status(),
-		time.Since(start),
-	))
-}
-
-func RequestLogger(handler http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		start := time.Now()
-		ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
-		defer doLog(start, ww, r)
-		handler.ServeHTTP(ww, r)
 	})
 }

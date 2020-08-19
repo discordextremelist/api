@@ -7,6 +7,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"time"
 )
 
 type ServerLinks struct {
@@ -40,20 +41,32 @@ func CleanupServer(rank UserRank, server *Server) *Server {
 }
 
 func mongoLookupServer(id string) (error, *Server) {
+	findStart := time.Now()
+	var findEnd int64
 	res := util.Database.Mongo.Collection("servers").FindOne(context.TODO(), bson.M{"_id": id})
 	if res.Err() != nil {
+		AddMongoLookupTime("servers", id, time.Since(findStart).Microseconds(), -1)
 		return res.Err(), nil
 	}
+	findEnd = time.Since(findStart).Microseconds()
 	server := Server{}
+	decodeStart := time.Now()
+	var decodeEnd int64
 	if err := res.Decode(&server); err != nil {
+		AddMongoLookupTime("servers", id, findEnd, time.Since(decodeStart).Microseconds())
 		return err, nil
 	}
+	decodeEnd = time.Since(decodeStart).Microseconds()
+	AddMongoLookupTime("servers", id, findEnd, decodeEnd)
 	return nil, &server
 }
 
 func LookupServer(id string, clean bool) (error, *Server) {
+	findStart := time.Now()
+	var findEnd int64
 	redisServer, err := util.Database.Redis.HGet(context.TODO(), "servers", id).Result()
 	if err == nil {
+		findEnd = time.Since(findStart).Microseconds()
 		if redisServer == "" {
 			err, server := mongoLookupServer(id)
 			server.MongoID = ""
@@ -71,11 +84,10 @@ func LookupServer(id string, clean bool) (error, *Server) {
 			}
 		}
 		server := &Server{}
+		decodeStart := time.Now()
 		err = json.Unmarshal([]byte(redisServer), &server)
 		if err != nil {
-			if err == mongo.ErrNoDocuments {
-				return err, nil
-			}
+			AddRedisLookupTime("servers", id, findEnd, time.Since(decodeStart).Microseconds())
 			log.Errorf("Json parsing failed for LookupServer(%s): %v", id, err.Error())
 			return LookupError, nil
 		} else {
@@ -88,6 +100,7 @@ func LookupServer(id string, clean bool) (error, *Server) {
 			if clean {
 				server = CleanupServer(fakeRank, server)
 			}
+			AddRedisLookupTime("servers", id, findEnd, time.Since(decodeStart).Microseconds())
 			return nil, server
 		}
 	} else {

@@ -7,6 +7,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"time"
 )
 
 type BotStatus struct {
@@ -76,20 +77,32 @@ func CleanupBot(rank UserRank, bot *Bot) *Bot {
 }
 
 func mongoLookupBot(id string) (error, *Bot) {
+	findStart := time.Now()
+	var findEnd int64
 	res := util.Database.Mongo.Collection("bots").FindOne(context.TODO(), bson.M{"_id": id})
 	if res.Err() != nil {
+		AddMongoLookupTime("bots", id, time.Since(findStart).Microseconds(), -1)
 		return res.Err(), nil
 	}
+	findEnd = time.Since(findStart).Microseconds()
 	bot := Bot{}
+	decodeStart := time.Now()
+	var decodeEnd int64
 	if err := res.Decode(&bot); err != nil {
+		AddMongoLookupTime("bots", id, findEnd, time.Since(decodeStart).Microseconds())
 		return err, nil
 	}
+	decodeEnd = time.Since(decodeStart).Microseconds()
+	AddMongoLookupTime("bots", id, findEnd, decodeEnd)
 	return nil, &bot
 }
 
 func LookupBot(id string, clean bool) (error, *Bot) {
+	findStart := time.Now()
+	var findEnd int64
 	redisBot, err := util.Database.Redis.HGet(context.TODO(), "bots", id).Result()
 	if err == nil {
+		findEnd = time.Since(findStart).Microseconds()
 		if redisBot == "" {
 			err, bot := mongoLookupBot(id)
 			bot.MongoID = ""
@@ -107,8 +120,10 @@ func LookupBot(id string, clean bool) (error, *Bot) {
 			}
 		}
 		bot := &Bot{}
+		decodeStart := time.Now()
 		err = json.Unmarshal([]byte(redisBot), &bot)
 		if err != nil {
+			AddRedisLookupTime("bots", id, findEnd, time.Since(decodeStart).Microseconds())
 			log.Errorf("Json parsing failed for LookupBot(%s): %v", id, err.Error())
 			return LookupError, nil
 		} else {
@@ -121,6 +136,7 @@ func LookupBot(id string, clean bool) (error, *Bot) {
 			if clean {
 				bot = CleanupBot(fakeRank, bot)
 			}
+			AddRedisLookupTime("bots", id, findEnd, time.Since(decodeStart).Microseconds())
 			return nil, bot
 		}
 	} else {

@@ -7,6 +7,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"time"
 )
 
 type UserPreferences struct {
@@ -122,20 +123,32 @@ func CleanupUser(rank UserRank, user *User) *User {
 }
 
 func mongoLookupUser(id string) (error, *User) {
+	findStart := time.Now()
+	var findEnd int64
 	res := util.Database.Mongo.Collection("users").FindOne(context.TODO(), bson.M{"_id": id})
 	if res.Err() != nil {
+		AddMongoLookupTime("users", id, time.Since(findStart).Microseconds(), -1)
 		return res.Err(), nil
 	}
+	findEnd = time.Since(findStart).Microseconds()
 	user := User{}
+	decodeStart := time.Now()
+	var decodeEnd int64
 	if err := res.Decode(&user); err != nil {
+		AddMongoLookupTime("users", id, findEnd, time.Since(decodeStart).Microseconds())
 		return err, nil
 	}
+	decodeEnd = time.Since(decodeStart).Microseconds()
+	AddMongoLookupTime("users", id, findEnd, decodeEnd)
 	return nil, &user
 }
 
 func LookupUser(id string, clean bool) (error, *User) {
+	findStart := time.Now()
+	var findEnd int64
 	redisUser, err := util.Database.Redis.HGet(context.TODO(), "users", id).Result()
 	if err == nil {
+		findEnd = time.Since(findStart).Microseconds()
 		if redisUser == "" {
 			err, user := mongoLookupUser(id)
 			user.MongoID = ""
@@ -153,8 +166,10 @@ func LookupUser(id string, clean bool) (error, *User) {
 			}
 		}
 		user := &User{}
+		decodeStart := time.Now()
 		err = json.Unmarshal([]byte(redisUser), &user)
 		if err != nil {
+			AddRedisLookupTime("users", id, findEnd, time.Since(decodeStart).Microseconds())
 			log.Errorf("Json parsing failed for LookupUser(%s): %v", id, err.Error())
 			return LookupError, nil
 		} else {
@@ -167,6 +182,7 @@ func LookupUser(id string, clean bool) (error, *User) {
 			if clean {
 				user = CleanupUser(fakeRank, user)
 			}
+			AddRedisLookupTime("users", id, findEnd, time.Since(decodeStart).Microseconds())
 			return nil, user
 		}
 	} else {

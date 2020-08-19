@@ -7,6 +7,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"time"
 )
 
 type Role struct {
@@ -67,20 +68,32 @@ type ServerTemplate struct {
 }
 
 func mongoLookupTemplate(id string) (error, *ServerTemplate) {
+	findStart := time.Now()
+	var findEnd int64
 	res := util.Database.Mongo.Collection("templates").FindOne(context.TODO(), bson.M{"_id": id})
 	if res.Err() != nil {
+		AddMongoLookupTime("templates", id, time.Since(findStart).Microseconds(), -1)
 		return res.Err(), nil
 	}
+	findEnd = time.Since(findStart).Microseconds()
 	template := ServerTemplate{}
+	decodeStart := time.Now()
+	var decodeEnd int64
 	if err := res.Decode(&template); err != nil {
+		AddMongoLookupTime("templates", id, findEnd, time.Since(decodeStart).Microseconds())
 		return err, nil
 	}
+	decodeEnd = time.Since(decodeStart).Microseconds()
+	AddMongoLookupTime("templates", id, findEnd, decodeEnd)
 	return nil, &template
 }
 
 func LookupTemplate(id string) (error, *ServerTemplate) {
+	findStart := time.Now()
+	var findEnd int64
 	redisTemplate, err := util.Database.Redis.HGet(context.TODO(), "templates", id).Result()
 	if err == nil {
+		findEnd = time.Since(findStart).Microseconds()
 		if redisTemplate == "" {
 			err, template := mongoLookupTemplate(id)
 			template.MongoID = ""
@@ -95,8 +108,10 @@ func LookupTemplate(id string) (error, *ServerTemplate) {
 			}
 		}
 		template := &ServerTemplate{}
+		decodeStart := time.Now()
 		err = json.Unmarshal([]byte(redisTemplate), &template)
 		if err != nil {
+			AddRedisLookupTime("templates", id, findEnd, time.Since(decodeStart).Microseconds())
 			log.Errorf("Json parsing failed for LookupTemplate(%s): %v", id, err.Error())
 			return LookupError, nil
 		} else {
@@ -106,6 +121,7 @@ func LookupTemplate(id string) (error, *ServerTemplate) {
 			} else {
 				template.MongoID = ""
 			}
+			AddRedisLookupTime("templates", id, findEnd, time.Since(decodeStart).Microseconds())
 			return nil, template
 		}
 	} else {
