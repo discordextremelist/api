@@ -2,6 +2,7 @@ package entities
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/discordextremelist/api/util"
 	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
@@ -87,6 +88,7 @@ type UserProfileLinks struct {
 }
 
 type User struct {
+	MongoID       string           `json:"_id,omitempty"`
 	ID            string           `bson:"_id" json:"id"`
 	Token         string           `json:"token,omitempty"`
 	Name          string           `json:"name"`
@@ -136,6 +138,7 @@ func LookupUser(id string, clean bool) (error, *User) {
 	if err == nil {
 		if redisUser == "" {
 			err, user := mongoLookupUser(id)
+			user.MongoID = ""
 			if err != nil {
 				if err == mongo.ErrNoDocuments {
 					return err, nil
@@ -150,11 +153,17 @@ func LookupUser(id string, clean bool) (error, *User) {
 			}
 		}
 		user := &User{}
-		err = util.Json.UnmarshalFromString(redisUser, &user)
+		err = json.Unmarshal([]byte(redisUser), &user)
 		if err != nil {
 			log.Errorf("Json parsing failed for LookupUser(%s): %v", id, err.Error())
 			return LookupError, nil
 		} else {
+			if user.ID == "" {
+				user.ID = user.MongoID
+				user.MongoID = ""
+			} else {
+				user.MongoID = ""
+			}
 			if clean {
 				user = CleanupUser(fakeRank, user)
 			}
@@ -162,6 +171,7 @@ func LookupUser(id string, clean bool) (error, *User) {
 		}
 	} else {
 		err, user := mongoLookupUser(id)
+		user.MongoID = ""
 		if err != nil {
 			if err == mongo.ErrNoDocuments {
 				return err, nil
@@ -183,7 +193,13 @@ func GetAllUsers(clean bool) (error, []User) {
 		var actual []User
 		for _, str := range redisUsers {
 			user := User{}
-			err = util.Json.UnmarshalFromString(str, &user)
+			err = json.Unmarshal([]byte(str), &user)
+			if user.ID == "" {
+				user.ID = user.MongoID
+				user.MongoID = ""
+			} else {
+				user.MongoID = ""
+			}
 			if err != nil {
 				continue
 			}
@@ -203,6 +219,7 @@ func GetAllUsers(clean bool) (error, []User) {
 		for cursor.Next(context.TODO()) {
 			user := User{}
 			err = cursor.Decode(&user)
+			user.MongoID = ""
 			if err != nil {
 				continue
 			}

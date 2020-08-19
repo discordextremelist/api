@@ -2,6 +2,7 @@ package routes
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/discordextremelist/api/entities"
 	"github.com/discordextremelist/api/ratelimit"
 	"github.com/discordextremelist/api/util"
@@ -67,7 +68,7 @@ func UpdateStats(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		var body StatsRequest
-		err = util.Json.Unmarshal(bytes, &body)
+		err = json.Unmarshal(bytes, &body)
 		if err != nil {
 			entities.WriteErrorResponse(w, entities.ReadFailed)
 			return
@@ -98,12 +99,12 @@ func UpdateStats(w http.ResponseWriter, r *http.Request) {
 		} else {
 			set["shardCount"] = bot.ShardCount
 		}
-		marshaled, err := util.Json.MarshalToString(bot)
+		marshaled, err := json.Marshal(bot)
 		if err != nil {
 			entities.WriteErrorResponse(w, err)
 			return
 		}
-		err = util.Database.Redis.HMSet(context.TODO(), "bots", bot.ID, marshaled).Err()
+		err = util.Database.Redis.HMSet(context.TODO(), "bots", bot.ID, string(marshaled)).Err()
 		if err != nil {
 			entities.WriteErrorResponse(w, err)
 			return

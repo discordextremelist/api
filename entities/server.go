@@ -2,6 +2,7 @@ package entities
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/discordextremelist/api/util"
 	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
@@ -15,6 +16,7 @@ type ServerLinks struct {
 }
 
 type Server struct {
+	MongoID    string      `json:"_id,omitempty"`
 	ID         string      `bson:"_id" json:"id"`
 	InviteCode string      `json:"inviteCode,omitempty"`
 	Name       string      `json:"name"`
@@ -54,6 +56,7 @@ func LookupServer(id string, clean bool) (error, *Server) {
 	if err == nil {
 		if redisServer == "" {
 			err, server := mongoLookupServer(id)
+			server.MongoID = ""
 			if err != nil {
 				if err == mongo.ErrNoDocuments {
 					return err, nil
@@ -68,7 +71,7 @@ func LookupServer(id string, clean bool) (error, *Server) {
 			}
 		}
 		server := &Server{}
-		err = util.Json.UnmarshalFromString(redisServer, &server)
+		err = json.Unmarshal([]byte(redisServer), &server)
 		if err != nil {
 			if err == mongo.ErrNoDocuments {
 				return err, nil
@@ -76,6 +79,12 @@ func LookupServer(id string, clean bool) (error, *Server) {
 			log.Errorf("Json parsing failed for LookupServer(%s): %v", id, err.Error())
 			return LookupError, nil
 		} else {
+			if server.ID == "" {
+				server.ID = server.MongoID
+				server.MongoID = ""
+			} else {
+				server.MongoID = ""
+			}
 			if clean {
 				server = CleanupServer(fakeRank, server)
 			}
@@ -83,6 +92,7 @@ func LookupServer(id string, clean bool) (error, *Server) {
 		}
 	} else {
 		err, server := mongoLookupServer(id)
+		server.MongoID = ""
 		if err != nil {
 			if err == mongo.ErrNoDocuments {
 				return err, nil
@@ -104,7 +114,13 @@ func GetAllServers(clean bool) (error, []Server) {
 		var actual []Server
 		for _, str := range redisServers {
 			server := Server{}
-			err = util.Json.UnmarshalFromString(str, &server)
+			err = json.Unmarshal([]byte(str), &server)
+			if server.ID == "" {
+				server.ID = server.MongoID
+				server.MongoID = ""
+			} else {
+				server.MongoID = ""
+			}
 			if err != nil {
 				continue
 			}
@@ -124,6 +140,7 @@ func GetAllServers(clean bool) (error, []Server) {
 		for cursor.Next(context.TODO()) {
 			server := Server{}
 			err = cursor.Decode(&server)
+			server.MongoID = ""
 			if err != nil {
 				continue
 			}

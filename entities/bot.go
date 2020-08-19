@@ -2,6 +2,7 @@ package entities
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/discordextremelist/api/util"
 	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
@@ -35,9 +36,11 @@ type WidgetBot struct {
 }
 
 type Bot struct {
+	MongoID     string    `json:"_id,omitempty"`
 	ID          string    `bson:"_id" json:"id"`
 	Name        string    `json:"name"`
 	Prefix      string    `json:"prefix"`
+	Library     string    `json:"library"`
 	Tags        []string  `json:"tags"`
 	VanityURL   string    `json:"vanityUrl"`
 	ServerCount int       `json:"serverCount"`
@@ -89,6 +92,7 @@ func LookupBot(id string, clean bool) (error, *Bot) {
 	if err == nil {
 		if redisBot == "" {
 			err, bot := mongoLookupBot(id)
+			bot.MongoID = ""
 			if err != nil {
 				if err == mongo.ErrNoDocuments {
 					return err, nil
@@ -103,11 +107,17 @@ func LookupBot(id string, clean bool) (error, *Bot) {
 			}
 		}
 		bot := &Bot{}
-		err = util.Json.UnmarshalFromString(redisBot, &bot)
+		err = json.Unmarshal([]byte(redisBot), &bot)
 		if err != nil {
 			log.Errorf("Json parsing failed for LookupBot(%s): %v", id, err.Error())
 			return LookupError, nil
 		} else {
+			if bot.ID == "" {
+				bot.ID = bot.MongoID
+				bot.MongoID = ""
+			} else {
+				bot.MongoID = ""
+			}
 			if clean {
 				bot = CleanupBot(fakeRank, bot)
 			}
@@ -115,6 +125,7 @@ func LookupBot(id string, clean bool) (error, *Bot) {
 		}
 	} else {
 		err, bot := mongoLookupBot(id)
+		bot.MongoID = ""
 		if err != nil {
 			if err == mongo.ErrNoDocuments {
 				return err, nil
@@ -136,9 +147,15 @@ func GetAllBots(clean bool) (error, []Bot) {
 		var actual []Bot
 		for _, str := range redisBots {
 			bot := Bot{}
-			err = util.Json.UnmarshalFromString(str, &bot)
+			err = json.Unmarshal([]byte(str), &bot)
 			if err != nil {
 				continue
+			}
+			if bot.ID == "" {
+				bot.ID = bot.MongoID
+				bot.MongoID = ""
+			} else {
+				bot.MongoID = ""
 			}
 			if clean {
 				bot = *CleanupBot(fakeRank, &bot)
@@ -156,6 +173,7 @@ func GetAllBots(clean bool) (error, []Bot) {
 		for cursor.Next(context.TODO()) {
 			bot := Bot{}
 			err = cursor.Decode(&bot)
+			bot.MongoID = ""
 			if err != nil {
 				continue
 			}

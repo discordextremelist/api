@@ -1,6 +1,7 @@
 package entities
 
 import (
+	"encoding/json"
 	"errors"
 	"github.com/discordextremelist/api/util"
 	"net/http"
@@ -96,7 +97,7 @@ var (
 func WriteJson(status int, writer http.ResponseWriter, v interface{}) {
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(status)
-	util.Json.NewEncoder(writer).Encode(v)
+	json.NewEncoder(writer).Encode(v)
 }
 
 func WriteErrorResponse(w http.ResponseWriter, err error) {
@@ -122,7 +123,7 @@ func WriteTemplateResponse(w http.ResponseWriter, template *ServerTemplate) {
 func WriteNotImplementedResponse(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(501)
-	util.Json.NewEncoder(w).Encode(notImplemented)
+	json.NewEncoder(w).Encode(notImplemented)
 }
 
 // DELAPI_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-000000000000000000
@@ -164,5 +165,5 @@ func NotFound(w http.ResponseWriter, _ *http.Request) {
 func BadAuth(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(403)
-	util.Json.NewEncoder(w).Encode(NoAuthError)
+	json.NewEncoder(w).Encode(NoAuthError)
 }

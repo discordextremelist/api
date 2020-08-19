@@ -2,6 +2,7 @@ package entities
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/discordextremelist/api/util"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
@@ -25,21 +26,19 @@ func PopulateDevCache() {
 		for cursor.Next(context.TODO()) {
 			var entity bson.M
 			err = cursor.Decode(&entity)
-			entity["id"] = entity["_id"].(string)
 			mongoEntities = append(mongoEntities, entity)
 		}
 		_ = cursor.Close(context.TODO())
 		var toSet []string
 		for _, entity := range mongoEntities {
 			id := entity["_id"].(string)
-			delete(entity, "_id")
-			marshaled, err := util.Json.MarshalToString(&entity)
+			marshaled, err := json.Marshal(&entity)
 			if err != nil {
 				logrus.Errorf("Failed to marshal an entity for cache %s (col: %s, err: %s)", id, col, err.Error())
 				continue
 			}
 			toSet = append(toSet, id)
-			toSet = append(toSet, marshaled)
+			toSet = append(toSet, string(marshaled))
 		}
 		err = util.Database.Redis.HMSet(context.TODO(), col, toSet).Err()
 		if err != nil {

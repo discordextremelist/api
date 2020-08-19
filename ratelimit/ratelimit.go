@@ -2,6 +2,7 @@ package ratelimit
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/discordextremelist/api/entities"
 	"github.com/discordextremelist/api/util"
 	log "github.com/sirupsen/logrus"
@@ -90,7 +91,7 @@ func (r *Ratelimiter) cacheAll() int {
 	}
 	for key, val := range results {
 		ratelimit := &Ratelimit{}
-		_ = util.Json.UnmarshalFromString(val, ratelimit)
+		_ = json.Unmarshal([]byte(val), ratelimit)
 		r.overwrite(key, *ratelimit)
 	}
 	return len(results)
@@ -115,8 +116,8 @@ func (r *Ratelimiter) cacheRatelimit(key string, ratelimit Ratelimit) {
 		return
 	}
 	if util.Database.IsRedisOpen() {
-		str, _ := util.Json.MarshalToString(&ratelimit)
-		util.Database.Redis.HMSet(context.TODO(), r.RPrefix, key, str)
+		byteArr, _ := json.Marshal(&ratelimit)
+		util.Database.Redis.HMSet(context.TODO(), r.RPrefix, key, string(byteArr))
 	}
 }
 
@@ -207,9 +208,9 @@ func (r *Ratelimiter) Ratelimit(next http.Handler) http.Handler {
 			headers.Set("Content-Type", "application/json")
 			writer.WriteHeader(http.StatusForbidden)
 			if !ratelimit.TempBan {
-				util.Json.NewEncoder(writer).Encode(entities.PermBannedError)
+				json.NewEncoder(writer).Encode(entities.PermBannedError)
 			} else {
-				util.Json.NewEncoder(writer).Encode(entities.TempBannedError)
+				json.NewEncoder(writer).Encode(entities.TempBannedError)
 			}
 			return
 		}
@@ -218,7 +219,7 @@ func (r *Ratelimiter) Ratelimit(next http.Handler) http.Handler {
 			headers.Set("Content-Type", "application/json")
 			headers.Set("Retry-After", strconv.FormatInt(r.NextReset.Sub(time.Now()).Milliseconds(), 10))
 			writer.WriteHeader(http.StatusTooManyRequests)
-			util.Json.NewEncoder(writer).Encode(entities.RatelimitedError)
+			json.NewEncoder(writer).Encode(entities.RatelimitedError)
 			return
 		}
 		headers.Set("X-RateLimit-Limit", strconv.Itoa(r.Limit))

@@ -2,6 +2,7 @@ package entities
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/discordextremelist/api/util"
 	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
@@ -44,6 +45,7 @@ type GuildChannel struct {
 }
 
 type ServerTemplate struct {
+	MongoID                     string              `json:"_id,omitempty"`
 	ID                          string              `bson:"_id" json:"id"`
 	Name                        string              `json:"name"`
 	Region                      string              `json:"region"`
@@ -81,6 +83,7 @@ func LookupTemplate(id string) (error, *ServerTemplate) {
 	if err == nil {
 		if redisTemplate == "" {
 			err, template := mongoLookupTemplate(id)
+			template.MongoID = ""
 			if err != nil {
 				if err == mongo.ErrNoDocuments {
 					return err, nil
@@ -92,15 +95,22 @@ func LookupTemplate(id string) (error, *ServerTemplate) {
 			}
 		}
 		template := &ServerTemplate{}
-		err = util.Json.UnmarshalFromString(redisTemplate, &template)
+		err = json.Unmarshal([]byte(redisTemplate), &template)
 		if err != nil {
 			log.Errorf("Json parsing failed for LookupTemplate(%s): %v", id, err.Error())
 			return LookupError, nil
 		} else {
+			if template.ID == "" {
+				template.ID = template.MongoID
+				template.MongoID = ""
+			} else {
+				template.MongoID = ""
+			}
 			return nil, template
 		}
 	} else {
-		err, bot := mongoLookupTemplate(id)
+		err, template := mongoLookupTemplate(id)
+		template.MongoID = ""
 		if err != nil {
 			if err == mongo.ErrNoDocuments {
 				return err, nil
@@ -108,7 +118,7 @@ func LookupTemplate(id string) (error, *ServerTemplate) {
 			log.Errorf("Fallback for MongoDB failed for LookupTemplate(%s): %v", id, err.Error())
 			return LookupError, nil
 		} else {
-			return nil, bot
+			return nil, template
 		}
 	}
 }
@@ -119,7 +129,13 @@ func GetAllTemplates() (error, []ServerTemplate) {
 		var actual []ServerTemplate
 		for _, str := range redisTemplates {
 			template := ServerTemplate{}
-			err = util.Json.UnmarshalFromString(str, &template)
+			err = json.Unmarshal([]byte(str), &template)
+			if template.ID == "" {
+				template.ID = template.MongoID
+				template.MongoID = ""
+			} else {
+				template.MongoID = ""
+			}
 			if err != nil {
 				continue
 			}
@@ -136,6 +152,7 @@ func GetAllTemplates() (error, []ServerTemplate) {
 		for cursor.Next(context.TODO()) {
 			template := ServerTemplate{}
 			err = cursor.Decode(&template)
+			template.MongoID = ""
 			if err != nil {
 				continue
 			}
