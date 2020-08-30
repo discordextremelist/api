@@ -48,6 +48,15 @@ func init() {
 }
 
 func main() {
+	if !util.Dev {
+		util.BuildClient()
+		err, name := util.FindKubernetesNode()
+		if err != nil {
+			log.Errorf("Failed to get the node this pod is on: %v", err)
+		} else {
+			log.Infof("Currently on node: %s", name)
+		}
+	}
 	util.Database.OpenRedisConnection()
 	util.Database.OpenMongoConnection()
 	if util.Dev {
