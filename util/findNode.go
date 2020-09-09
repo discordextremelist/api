@@ -8,6 +8,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"os"
+	"strings"
 )
 
 var (
@@ -16,8 +17,13 @@ var (
 )
 
 func BuildClient() {
-	config, err := rest.InClusterConfig()
-	client, err := kubernetes.NewForConfig(config)
+	info := strings.Split(os.Getenv("KUBE_INFO"), ":")
+	client, err := kubernetes.NewForConfig(&rest.Config{
+		Username:        info[0],
+		Password:        info[1],
+		TLSClientConfig: rest.TLSClientConfig{Insecure: true},
+		Host:            "https://kubernetes:443",
+	})
 	if err != nil {
 		logrus.Errorf("Failed to create a Kubernetes API Client: %v", err)
 	}
@@ -29,7 +35,7 @@ func FindKubernetesNode() (error, string) {
 	host, _ := os.Hostname()
 	pod, err := Client.CoreV1().Pods("del").Get(context.TODO(), host, v1.GetOptions{})
 	if err != nil {
-		logrus.Errorf("Failed fetching deployment: %v", err)
+		logrus.Errorf("Failed fetching pod info: %v", err)
 		return UnknownPod, ""
 	}
 	return nil, pod.Spec.NodeName
