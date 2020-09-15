@@ -96,7 +96,6 @@ func LookupTemplate(id string) (error, *ServerTemplate) {
 		findEnd = time.Since(findStart).Microseconds()
 		if redisTemplate == "" {
 			err, template := mongoLookupTemplate(id)
-			template.MongoID = ""
 			if err != nil {
 				if err == mongo.ErrNoDocuments {
 					return err, nil
@@ -104,6 +103,7 @@ func LookupTemplate(id string) (error, *ServerTemplate) {
 				log.Errorf("Fallback for MongoDB failed for LookupTemplate(%s): %v", id, err.Error())
 				return LookupError, nil
 			} else {
+				template.MongoID = ""
 				return nil, template
 			}
 		}
@@ -126,7 +126,6 @@ func LookupTemplate(id string) (error, *ServerTemplate) {
 		}
 	} else {
 		err, template := mongoLookupTemplate(id)
-		template.MongoID = ""
 		if err != nil {
 			if err == mongo.ErrNoDocuments {
 				return err, nil
@@ -134,6 +133,7 @@ func LookupTemplate(id string) (error, *ServerTemplate) {
 			log.Errorf("Fallback for MongoDB failed for LookupTemplate(%s): %v", id, err.Error())
 			return LookupError, nil
 		} else {
+			template.MongoID = ""
 			return nil, template
 		}
 	}

@@ -151,7 +151,6 @@ func LookupUser(id string, clean bool) (error, *User) {
 		findEnd = time.Since(findStart).Microseconds()
 		if redisUser == "" {
 			err, user := mongoLookupUser(id)
-			user.MongoID = ""
 			if err != nil {
 				if err == mongo.ErrNoDocuments {
 					return err, nil
@@ -159,6 +158,7 @@ func LookupUser(id string, clean bool) (error, *User) {
 				log.Errorf("Fallback for MongoDB failed for LookupUser(%s): %v", id, err.Error())
 				return LookupError, nil
 			} else {
+				user.MongoID = ""
 				if clean {
 					user = CleanupUser(fakeRank, user)
 				}
@@ -187,7 +187,6 @@ func LookupUser(id string, clean bool) (error, *User) {
 		}
 	} else {
 		err, user := mongoLookupUser(id)
-		user.MongoID = ""
 		if err != nil {
 			if err == mongo.ErrNoDocuments {
 				return err, nil
@@ -195,6 +194,7 @@ func LookupUser(id string, clean bool) (error, *User) {
 			log.Errorf("Fallback for MongoDB failed for LookupUser(%s): %v", id, err.Error())
 			return LookupError, nil
 		} else {
+			user.MongoID = ""
 			if clean {
 				user = CleanupUser(fakeRank, user)
 			}

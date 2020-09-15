@@ -105,7 +105,6 @@ func LookupBot(id string, clean bool) (error, *Bot) {
 		findEnd = time.Since(findStart).Microseconds()
 		if redisBot == "" {
 			err, bot := mongoLookupBot(id)
-			bot.MongoID = ""
 			if err != nil {
 				if err == mongo.ErrNoDocuments {
 					return err, nil
@@ -113,6 +112,7 @@ func LookupBot(id string, clean bool) (error, *Bot) {
 				log.Errorf("Fallback for MongoDB failed for LookupBot(%s): %v", id, err.Error())
 				return LookupError, nil
 			} else {
+				bot.MongoID = ""
 				if clean {
 					bot = CleanupBot(fakeRank, bot)
 				}
@@ -141,7 +141,6 @@ func LookupBot(id string, clean bool) (error, *Bot) {
 		}
 	} else {
 		err, bot := mongoLookupBot(id)
-		bot.MongoID = ""
 		if err != nil {
 			if err == mongo.ErrNoDocuments {
 				return err, nil
@@ -149,6 +148,7 @@ func LookupBot(id string, clean bool) (error, *Bot) {
 			log.Errorf("Fallback for MongoDB failed for LookupBot(%s): %v", id, err.Error())
 			return LookupError, nil
 		} else {
+			bot.MongoID = ""
 			if clean {
 				bot = CleanupBot(fakeRank, bot)
 			}

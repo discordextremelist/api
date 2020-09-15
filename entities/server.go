@@ -69,7 +69,6 @@ func LookupServer(id string, clean bool) (error, *Server) {
 		findEnd = time.Since(findStart).Microseconds()
 		if redisServer == "" {
 			err, server := mongoLookupServer(id)
-			server.MongoID = ""
 			if err != nil {
 				if err == mongo.ErrNoDocuments {
 					return err, nil
@@ -77,6 +76,7 @@ func LookupServer(id string, clean bool) (error, *Server) {
 				log.Errorf("Fallback for MongoDB failed for LookupServer(%s): %v", id, err.Error())
 				return LookupError, nil
 			} else {
+				server.MongoID = ""
 				if clean {
 					server = CleanupServer(fakeRank, server)
 				}
@@ -105,7 +105,6 @@ func LookupServer(id string, clean bool) (error, *Server) {
 		}
 	} else {
 		err, server := mongoLookupServer(id)
-		server.MongoID = ""
 		if err != nil {
 			if err == mongo.ErrNoDocuments {
 				return err, nil
@@ -113,6 +112,7 @@ func LookupServer(id string, clean bool) (error, *Server) {
 			log.Errorf("Fallback for MongoDB failed for LookupServer(%s): %v", id, err.Error())
 			return LookupError, nil
 		} else {
+			server.MongoID = ""
 			if clean {
 				server = CleanupServer(fakeRank, server)
 			}

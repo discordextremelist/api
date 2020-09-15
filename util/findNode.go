@@ -8,7 +8,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"os"
-	"strings"
 )
 
 var (
@@ -17,13 +16,8 @@ var (
 )
 
 func BuildClient() {
-	info := strings.Split(os.Getenv("KUBE_INFO"), ":")
-	client, err := kubernetes.NewForConfig(&rest.Config{
-		Username:        info[0],
-		Password:        info[1],
-		TLSClientConfig: rest.TLSClientConfig{Insecure: true},
-		Host:            "https://kubernetes:443",
-	})
+	config, _ := rest.InClusterConfig()
+	client, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		logrus.Errorf("Failed to create a Kubernetes API Client: %v", err)
 	}
