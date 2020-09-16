@@ -7,6 +7,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"net"
 	"time"
 )
 
@@ -23,11 +24,22 @@ type BotVotes struct {
 }
 
 type BotLinks struct {
-	Invite   string `json:"invite"`
-	Support  string `json:"support"`
-	Website  string `json:"website"`
-	Donation string `json:"donation"`
-	Repo     string `json:"repo"`
+	Invite   		string	`json:"invite"`
+	Support  		string	`json:"support"`
+	Website  		string	`json:"website"`
+	Donation 		string	`json:"donation"`
+	Repo     		string	`json:"repo"`
+	PrivacyPolicy	string	`json:"privacyPolicy"`
+}
+
+type BotSocial struct {
+	Twitter	string	`json:"twitter"`
+}
+
+type BotTheme struct {
+	UseCustomColour	bool	`json:"useCustomColour"`
+	Colour			string	`json:"colour"`
+	Banner			string	`json:"banner"`
 }
 
 type WidgetBot struct {
@@ -37,25 +49,29 @@ type WidgetBot struct {
 }
 
 type Bot struct {
-	MongoID     string    `json:"_id,omitempty"`
-	ID          string    `bson:"_id" json:"id"`
-	Name        string    `json:"name"`
-	Prefix      string    `json:"prefix"`
-	Library     string    `json:"library"`
-	Tags        []string  `json:"tags"`
-	VanityURL   string    `json:"vanityUrl"`
-	ServerCount int       `json:"serverCount"`
-	ShardCount  int       `json:"shardCount"`
-	Token       string    `json:"token,omitempty"`
-	ShortDesc   string    `json:"shortDesc"`
-	LongDesc    string    `json:"longDesc"`
-	ModNotes    string    `json:"modNotes,omitempty"`
-	Editors     []string  `json:"editors"`
-	Owner       Owner     `json:"owner"`
-	Avatar      Avatar    `json:"avatar"`
-	Votes       *BotVotes `json:"votes,omitempty"`
-	Links       BotLinks  `json:"links"`
-	Status      BotStatus `json:"status"`
+	MongoID     string    	`json:"_id,omitempty"`
+	ID          string    	`bson:"_id" json:"id"`
+	Name        string    	`json:"name"`
+	Prefix      string    	`json:"prefix"`
+	Library     string    	`json:"library"`
+	Tags        []string  	`json:"tags"`
+	VanityURL   string    	`json:"vanityUrl"`
+	ServerCount int       	`json:"serverCount"`
+	ShardCount  int       	`json:"shardCount"`
+	Token       string    	`json:"token,omitempty"`
+	Flags       int       	`json:"flags"`
+	ShortDesc   string    	`json:"shortDesc"`
+	LongDesc    string    	`json:"longDesc"`
+	ModNotes    string    	`json:"modNotes,omitempty"`
+	Editors     []string  	`json:"editors"`
+	Owner       Owner     	`json:"owner"`
+	Avatar      Avatar    	`json:"avatar"`
+	Votes       *BotVotes 	`json:"votes,omitempty"`
+	Links       BotLinks  	`json:"links"`
+	Social		BotSocial 	`json:"social"`
+	Theme		*BotTheme 	`json:"theme,omitempty"`
+	WidgetBot	*WidgetBot	`json:"widgetbot,omitempty"`
+	Status      BotStatus 	`json:"status"`
 }
 
 func CleanupBot(rank UserRank, bot *Bot) *Bot {

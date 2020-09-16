@@ -7,6 +7,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"net"
 	"time"
 )
 
@@ -46,10 +47,12 @@ type Strike struct {
 	Executor string `json:"executor"`
 }
 
-type Week struct {
-	Total    int `json:"total"`
-	Approved int `json:"approved"`
-	Declined int `json:"declined"`
+type SubHandled struct {
+	Total    	int `json:"total"`
+	Approved 	int `json:"approved"`
+	Declined 	int `json:"declined"`
+	Unapproved	int	`json:"unapproved"`
+	Removed		int	`json:"removed"`
 }
 
 type StaffTracking struct {
@@ -73,10 +76,20 @@ type StaffTracking struct {
 		Warnings []Strike `json:"warnings"`
 	} `json:"punishments"`
 	HandledBots struct {
-		AllTime  Week `json:"allTime"`
-		PrevWeek Week `json:"prevWeek"`
-		ThisWeek Week `json:"thisWeek"`
+		AllTime  SubHandled `json:"allTime"`
+		PrevWeek SubHandled `json:"prevWeek"`
+		ThisWeek SubHandled `json:"thisWeek"`
 	} `json:"handledBots"`
+	HandledServers struct {
+		AllTime  SubHandled `json:"allTime"`
+		PrevWeek SubHandled `json:"prevWeek"`
+		ThisWeek SubHandled `json:"thisWeek"`
+	} `json:"handledServers"`
+	HandledTemplates struct {
+		AllTime  SubHandled `json:"allTime"`
+		PrevWeek SubHandled `json:"prevWeek"`
+		ThisWeek SubHandled `json:"thisWeek"`
+	} `json:"handledTemplates"`
 }
 
 type UserProfileLinks struct {
@@ -96,6 +109,7 @@ type User struct {
 	Discrim       string           `json:"discrim"`
 	FullUsername  string           `json:"fullUsername"`
 	Locale        string           `json:"locale,omitempty"`
+	Flags		  int			   `json:"flags"`
 	Avatar        Avatar           `json:"avatar"`
 	Preferences   *UserPreferences `json:"preferences,omitempty"`
 	Profile       UserProfile      `json:"profile"`

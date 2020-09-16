@@ -28,7 +28,8 @@ type PermissionsOverwrite struct {
 }
 
 type ServerTemplateLinks struct {
-	Template string `json:"template"`
+	LinkToServerPage	bool	`json:"linkToServerPage,omitempty"`
+	Template 			string 	`json:"template"`
 }
 
 type GuildChannel struct {
