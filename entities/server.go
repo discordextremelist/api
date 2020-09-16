@@ -16,17 +16,23 @@ type ServerLinks struct {
 	Donation string `json:"donation"`
 }
 
+type ServerStatus struct {
+	ReviewRequired	bool	`json:"reviewRequired"`
+}
+
 type Server struct {
-	MongoID    string      `json:"_id,omitempty"`
-	ID         string      `bson:"_id" json:"id"`
-	InviteCode string      `json:"inviteCode,omitempty"`
-	Name       string      `json:"name"`
-	ShortDesc  string      `json:"shortDesc"`
-	LongDesc   string      `json:"longDesc"`
-	Tags       []string    `json:"tags"`
-	Owner      Owner       `json:"owner"`
-	Icon       Avatar      `json:"icon"`
-	Links      ServerLinks `json:"links"`
+	MongoID    		string      	`json:"_id,omitempty"`
+	ID         		string      	`bson:"_id" json:"id"`
+	InviteCode 		string      	`json:"inviteCode,omitempty"`
+	Name       		string      	`json:"name"`
+	ShortDesc  		string      	`json:"shortDesc"`
+	LongDesc   		string      	`json:"longDesc"`
+	Tags       		[]string    	`json:"tags"`
+	PreviewChannel	string			`json:"previewChannel"`
+	Owner      		Owner       	`json:"owner"`
+	Icon       		Avatar      	`json:"icon"`
+	Links      		ServerLinks 	`json:"links"`
+	Status			ServerStatus	`json:"status"`
 }
 
 func CleanupServer(rank UserRank, server *Server) *Server {
