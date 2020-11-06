@@ -19,6 +19,7 @@ type LookupTimes struct {
 type DebugStatistics struct {
 	MongoPing     int64          `json:"mongo_ping"`
 	RedisPing     int64          `json:"redis_ping"`
+	Node          string         `json:"node"`
 	LookupTimes   LookupTimes    `json:"lookup_times"`
 	ResponseTimes []ResponseTime `json:"response_times"`
 	Hostname      string         `json:"hostname"`

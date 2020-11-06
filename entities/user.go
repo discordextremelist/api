@@ -7,7 +7,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
-	"net"
 	"time"
 )
 
@@ -48,11 +47,11 @@ type Strike struct {
 }
 
 type SubHandled struct {
-	Total    	int `json:"total"`
-	Approved 	int `json:"approved"`
-	Declined 	int `json:"declined"`
-	Unapproved	int	`json:"unapproved"`
-	Removed		int	`json:"removed"`
+	Total      int `json:"total"`
+	Approved   int `json:"approved"`
+	Declined   int `json:"declined"`
+	Unapproved int `json:"unapproved"`
+	Removed    int `json:"removed"`
 }
 
 type StaffTracking struct {
@@ -109,7 +108,7 @@ type User struct {
 	Discrim       string           `json:"discrim"`
 	FullUsername  string           `json:"fullUsername"`
 	Locale        string           `json:"locale,omitempty"`
-	Flags		  int			   `json:"flags"`
+	Flags         int              `json:"flags"`
 	Avatar        Avatar           `json:"avatar"`
 	Preferences   *UserPreferences `json:"preferences,omitempty"`
 	Profile       UserProfile      `json:"profile"`

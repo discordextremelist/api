@@ -13,6 +13,7 @@ import (
 var (
 	UnknownPod = errors.New("unknown pod")
 	Client     *kubernetes.Clientset
+	Node       string
 )
 
 func BuildClient() {
@@ -25,12 +26,13 @@ func BuildClient() {
 	logrus.Info("Kubernetes API Client built successfully!")
 }
 
-func FindKubernetesNode() (error, string) {
+func FindKubernetesNode() error {
 	host, _ := os.Hostname()
 	pod, err := Client.CoreV1().Pods("del").Get(context.TODO(), host, v1.GetOptions{})
 	if err != nil {
 		logrus.Errorf("Failed fetching pod info: %v", err)
-		return UnknownPod, ""
+		return UnknownPod
 	}
-	return nil, pod.Spec.NodeName
+	Node = pod.Spec.NodeName
+	return nil
 }

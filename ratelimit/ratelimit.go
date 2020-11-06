@@ -198,10 +198,6 @@ func (r *Ratelimiter) overwrite(key string, ratelimit Ratelimit) {
 
 func (r *Ratelimiter) Ratelimit(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(writer http.ResponseWriter, req *http.Request) {
-		if util.CheckIP(req.RemoteAddr) {
-			next.ServeHTTP(writer, req)
-			return
-		}
 		ratelimit := r.getRatelimit(req.RemoteAddr)
 		headers := writer.Header()
 		if ratelimit.TotalBans > 0 && (ratelimit.TempBannedAt > 0 || ratelimit.PermBannedAt > 0) {
