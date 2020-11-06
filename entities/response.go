@@ -167,12 +167,8 @@ func WriteNotImplementedResponse(w http.ResponseWriter) {
 // DELAPI_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-000000000000000000
 func TokenValidator(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/health" || r.URL.Path == "/debug" || util.CheckIP(r.RemoteAddr) {
-			next.ServeHTTP(w, r)
-			return
-		}
-		auth := r.Header.Get(util.Authorization)
-		if auth != "" && !util.Dev {
+		if r.Method == "POST" {
+			auth := r.Header.Get(util.Authorization)
 			matches := util.TokenPattern.FindStringSubmatch(auth)
 			if len(matches) < 2 {
 				BadAuth(w, r)
@@ -188,8 +184,6 @@ func TokenValidator(next http.Handler) http.Handler {
 					next.ServeHTTP(w, r)
 				}
 			}
-		} else if auth == "" && !util.Dev {
-			BadAuth(w, r)
 		} else {
 			next.ServeHTTP(w, r)
 		}

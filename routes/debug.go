@@ -48,6 +48,7 @@ func debug(w http.ResponseWriter) {
 	entities.WritePrettyJson(200, w, &entities.DebugStatistics{
 		RedisPing: redisPingEnd,
 		MongoPing: mongoPingEnd,
+		Node:      util.Node,
 		LookupTimes: entities.LookupTimes{
 			Mongo: entities.MongoLookupTimes,
 			Redis: entities.RedisLookupTimes,

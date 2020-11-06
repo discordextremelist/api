@@ -10,7 +10,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"os"
-	"strings"
 )
 
 var (
@@ -31,30 +30,16 @@ func init() {
 			log.Fatalf("Required environmental variable '%s' doesn't exist!", check[i])
 		}
 	}
-	wl, ok := os.LookupEnv("IP_WHITELIST")
-	if ok && wl != "" {
-		ips := strings.Split(wl, ";")
-		for _, ip := range ips {
-			if ip != "" {
-				util.IPWhitelist = append(util.IPWhitelist, ip)
-			}
-		}
-		if len(util.IPWhitelist) == 1 {
-			log.Debugf("Cached %d whitelisted IP address!", len(util.IPWhitelist))
-		} else {
-			log.Debugf("Cached %d whitelisted IP addresses!", len(util.IPWhitelist))
-		}
-	}
 }
 
 func main() {
 	if !util.Dev {
 		util.BuildClient()
-		err, name := util.FindKubernetesNode()
+		err := util.FindKubernetesNode()
 		if err != nil {
 			log.Errorf("Failed to get the node this pod is on: %v", err)
 		} else {
-			log.Infof("Currently on node: %s", name)
+			log.Infof("Currently on node: %s", util.Node)
 		}
 	}
 	util.Database.OpenRedisConnection()
