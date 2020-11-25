@@ -40,6 +40,30 @@ func (manager *Manager) IsMongoOpen() bool {
 	return true
 }
 
+func (manager *Manager) PingRedis() int64 {
+	redisPing := time.Now()
+	var redisPingEnd int64
+	err := manager.Redis.Ping(context.TODO()).Err()
+	if err != nil {
+		redisPingEnd = -1
+	} else {
+		redisPingEnd = time.Since(redisPing).Milliseconds()
+	}
+	return redisPingEnd
+}
+
+func (manager *Manager) PingMongo() int64 {
+	mongoPingStart := time.Now()
+	var mongoPingEnd int64
+	err := manager.Mongo.Client().Ping(context.TODO(), readpref.Primary())
+	if err != nil {
+		mongoPingEnd = -1
+	} else {
+		mongoPingEnd = time.Since(mongoPingStart).Milliseconds()
+	}
+	return mongoPingEnd
+}
+
 func (manager *Manager) retryRedisConnect() {
 	backoff := 0 * time.Second
 	attempt := 0

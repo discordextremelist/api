@@ -12,10 +12,12 @@ import (
 )
 
 type APIHealthResponse struct {
-	Error   bool `json:"error"`
-	Status  int  `json:"status"`
-	RedisOK bool `json:"redis_ok"`
-	MongoOK bool `json:"mongo_ok"`
+	Error     bool  `json:"error"`
+	Status    int   `json:"status"`
+	RedisOK   bool  `json:"redis_ok"`
+	MongoOK   bool  `json:"mongo_ok"`
+	RedisPing int64 `json:"redis_ping"`
+	MongoPing int64 `json:"mongo_ping"`
 }
 
 type APIStatsResponseServers struct {
