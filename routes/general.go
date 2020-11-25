@@ -70,10 +70,12 @@ func Stats(w http.ResponseWriter, _ *http.Request) {
 
 func Health(w http.ResponseWriter, _ *http.Request) {
 	result := entities.APIHealthResponse{
-		Status:  200,
-		Error:   false,
-		RedisOK: true,
-		MongoOK: true,
+		Status:    200,
+		Error:     false,
+		RedisOK:   true,
+		MongoOK:   true,
+		MongoPing: util.Database.PingMongo(),
+		RedisPing: util.Database.PingRedis(),
 	}
 	if !util.Database.IsRedisOpen() {
 		result.Status = http.StatusServiceUnavailable

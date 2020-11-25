@@ -176,45 +176,26 @@ func LookupBot(id string, clean bool) (error, *Bot) {
 
 func GetAllBots(clean bool) (error, []Bot) {
 	redisBots, err := util.Database.Redis.HVals(context.TODO(), "bots").Result()
-	if err == nil && len(redisBots) > 0 {
-		var actual []Bot
-		for _, str := range redisBots {
-			bot := Bot{}
-			err = json.Unmarshal([]byte(str), &bot)
-			if err != nil {
-				continue
-			}
-			if bot.ID == "" {
-				bot.ID = bot.MongoID
-				bot.MongoID = ""
-			} else {
-				bot.MongoID = ""
-			}
-			if clean {
-				bot = *CleanupBot(fakeRank, &bot)
-			}
-			actual = append(actual, bot)
-		}
-		return nil, actual
-	} else {
-		cursor, err := util.Database.Mongo.Collection("bots").Find(context.TODO(), bson.M{})
-		if err != nil {
-			return err, nil
-		}
-		var actual []Bot
-		defer cursor.Close(context.TODO())
-		for cursor.Next(context.TODO()) {
-			bot := Bot{}
-			err = cursor.Decode(&bot)
-			bot.MongoID = ""
-			if err != nil {
-				continue
-			}
-			if clean {
-				bot = *CleanupBot(fakeRank, &bot)
-			}
-			actual = append(actual, bot)
-		}
-		return nil, actual
+	var actual []Bot
+	if err != nil {
+		return err, nil
 	}
+	for _, str := range redisBots {
+		bot := Bot{}
+		err = json.Unmarshal([]byte(str), &bot)
+		if err != nil {
+			continue
+		}
+		if bot.ID == "" {
+			bot.ID = bot.MongoID
+			bot.MongoID = ""
+		} else {
+			bot.MongoID = ""
+		}
+		if clean {
+			bot = *CleanupBot(fakeRank, &bot)
+		}
+		actual = append(actual, bot)
+	}
+	return nil, actual
 }

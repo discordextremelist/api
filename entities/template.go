@@ -28,8 +28,8 @@ type PermissionsOverwrite struct {
 }
 
 type ServerTemplateLinks struct {
-	LinkToServerPage	bool	`json:"linkToServerPage,omitempty"`
-	Template 			string 	`json:"template"`
+	LinkToServerPage bool   `json:"linkToServerPage,omitempty"`
+	Template         string `json:"template"`
 }
 
 type GuildChannel struct {
@@ -142,39 +142,23 @@ func LookupTemplate(id string) (error, *ServerTemplate) {
 
 func GetAllTemplates() (error, []ServerTemplate) {
 	redisTemplates, err := util.Database.Redis.HVals(context.TODO(), "templates").Result()
-	if err == nil && len(redisTemplates) > 0 {
-		var actual []ServerTemplate
-		for _, str := range redisTemplates {
-			template := ServerTemplate{}
-			err = json.Unmarshal([]byte(str), &template)
-			if template.ID == "" {
-				template.ID = template.MongoID
-				template.MongoID = ""
-			} else {
-				template.MongoID = ""
-			}
-			if err != nil {
-				continue
-			}
-			actual = append(actual, template)
-		}
-		return nil, actual
-	} else {
-		cursor, err := util.Database.Mongo.Collection("templates").Find(context.TODO(), bson.M{})
-		if err != nil {
-			return err, nil
-		}
-		var actual []ServerTemplate
-		defer cursor.Close(context.TODO())
-		for cursor.Next(context.TODO()) {
-			template := ServerTemplate{}
-			err = cursor.Decode(&template)
-			template.MongoID = ""
-			if err != nil {
-				continue
-			}
-			actual = append(actual, template)
-		}
-		return nil, actual
+	if err != nil {
+		return err, nil
 	}
+	var actual []ServerTemplate
+	for _, str := range redisTemplates {
+		template := ServerTemplate{}
+		err = json.Unmarshal([]byte(str), &template)
+		if template.ID == "" {
+			template.ID = template.MongoID
+			template.MongoID = ""
+		} else {
+			template.MongoID = ""
+		}
+		if err != nil {
+			continue
+		}
+		actual = append(actual, template)
+	}
+	return nil, actual
 }

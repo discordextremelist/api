@@ -5,10 +5,8 @@ import (
 	"github.com/discordextremelist/api/entities"
 	"github.com/discordextremelist/api/util"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo/readpref"
 	"net/http"
 	"os"
-	"time"
 )
 
 func Debug(w http.ResponseWriter, r *http.Request) {
@@ -28,26 +26,10 @@ func Debug(w http.ResponseWriter, r *http.Request) {
 }
 
 func debug(w http.ResponseWriter) {
-	redisPing := time.Now()
-	var redisPingEnd int64
-	err := util.Database.Redis.Ping(context.TODO()).Err()
-	if err != nil {
-		redisPingEnd = -1
-	} else {
-		redisPingEnd = time.Since(redisPing).Milliseconds()
-	}
-	mongoPingStart := time.Now()
-	var mongoPingEnd int64
-	err = util.Database.Mongo.Client().Ping(context.TODO(), readpref.Primary())
-	if err != nil {
-		mongoPingEnd = -1
-	} else {
-		mongoPingEnd = time.Since(mongoPingStart).Milliseconds()
-	}
 	hostname, _ := os.Hostname()
 	entities.WritePrettyJson(200, w, &entities.DebugStatistics{
-		RedisPing: redisPingEnd,
-		MongoPing: mongoPingEnd,
+		RedisPing: util.Database.PingRedis(),
+		MongoPing: util.Database.PingMongo(),
 		Node:      util.Node,
 		LookupTimes: entities.LookupTimes{
 			Mongo: entities.MongoLookupTimes,
