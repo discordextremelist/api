@@ -218,45 +218,26 @@ func LookupUser(id string, clean bool) (error, *User) {
 
 func GetAllUsers(clean bool) (error, []User) {
 	redisUsers, err := util.Database.Redis.HVals(context.TODO(), "users").Result()
-	if err == nil && len(redisUsers) > 0 {
-		var actual []User
-		for _, str := range redisUsers {
-			user := User{}
-			err = json.Unmarshal([]byte(str), &user)
-			if user.ID == "" {
-				user.ID = user.MongoID
-				user.MongoID = ""
-			} else {
-				user.MongoID = ""
-			}
-			if err != nil {
-				continue
-			}
-			if clean {
-				user = *CleanupUser(fakeRank, &user)
-			}
-			actual = append(actual, user)
-		}
-		return nil, actual
-	} else {
-		cursor, err := util.Database.Mongo.Collection("users").Find(context.TODO(), bson.M{})
-		if err != nil {
-			return err, nil
-		}
-		var actual []User
-		defer cursor.Close(context.TODO())
-		for cursor.Next(context.TODO()) {
-			user := User{}
-			err = cursor.Decode(&user)
-			user.MongoID = ""
-			if err != nil {
-				continue
-			}
-			if clean {
-				user = *CleanupUser(fakeRank, &user)
-			}
-			actual = append(actual, user)
-		}
-		return nil, actual
+	if err != nil {
+		return err, nil
 	}
+	var actual []User
+	for _, str := range redisUsers {
+		user := User{}
+		err = json.Unmarshal([]byte(str), &user)
+		if user.ID == "" {
+			user.ID = user.MongoID
+			user.MongoID = ""
+		} else {
+			user.MongoID = ""
+		}
+		if err != nil {
+			continue
+		}
+		if clean {
+			user = *CleanupUser(fakeRank, &user)
+		}
+		actual = append(actual, user)
+	}
+	return nil, actual
 }

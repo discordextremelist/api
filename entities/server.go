@@ -17,22 +17,22 @@ type ServerLinks struct {
 }
 
 type ServerStatus struct {
-	ReviewRequired	bool	`json:"reviewRequired"`
+	ReviewRequired bool `json:"reviewRequired"`
 }
 
 type Server struct {
-	MongoID    		string      	`json:"_id,omitempty"`
-	ID         		string      	`bson:"_id" json:"id"`
-	InviteCode 		string      	`json:"inviteCode,omitempty"`
-	Name       		string      	`json:"name"`
-	ShortDesc  		string      	`json:"shortDesc"`
-	LongDesc   		string      	`json:"longDesc"`
-	Tags       		[]string    	`json:"tags"`
-	PreviewChannel	string			`json:"previewChannel"`
-	Owner      		Owner       	`json:"owner"`
-	Icon       		Avatar      	`json:"icon"`
-	Links      		ServerLinks 	`json:"links"`
-	Status			ServerStatus	`json:"status"`
+	MongoID        string       `json:"_id,omitempty"`
+	ID             string       `bson:"_id" json:"id"`
+	InviteCode     string       `json:"inviteCode,omitempty"`
+	Name           string       `json:"name"`
+	ShortDesc      string       `json:"shortDesc"`
+	LongDesc       string       `json:"longDesc"`
+	Tags           []string     `json:"tags"`
+	PreviewChannel string       `json:"previewChannel"`
+	Owner          Owner        `json:"owner"`
+	Icon           Avatar       `json:"icon"`
+	Links          ServerLinks  `json:"links"`
+	Status         ServerStatus `json:"status"`
 }
 
 func CleanupServer(rank UserRank, server *Server) *Server {
@@ -129,45 +129,26 @@ func LookupServer(id string, clean bool) (error, *Server) {
 
 func GetAllServers(clean bool) (error, []Server) {
 	redisServers, err := util.Database.Redis.HVals(context.TODO(), "servers").Result()
-	if err == nil && len(redisServers) > 0 {
-		var actual []Server
-		for _, str := range redisServers {
-			server := Server{}
-			err = json.Unmarshal([]byte(str), &server)
-			if server.ID == "" {
-				server.ID = server.MongoID
-				server.MongoID = ""
-			} else {
-				server.MongoID = ""
-			}
-			if err != nil {
-				continue
-			}
-			if clean {
-				server = *CleanupServer(fakeRank, &server)
-			}
-			actual = append(actual, server)
-		}
-		return nil, actual
-	} else {
-		cursor, err := util.Database.Mongo.Collection("servers").Find(context.TODO(), bson.M{})
-		if err != nil {
-			return err, nil
-		}
-		var actual []Server
-		defer cursor.Close(context.TODO())
-		for cursor.Next(context.TODO()) {
-			server := Server{}
-			err = cursor.Decode(&server)
-			server.MongoID = ""
-			if err != nil {
-				continue
-			}
-			if clean {
-				server = *CleanupServer(fakeRank, &server)
-			}
-			actual = append(actual, server)
-		}
-		return nil, actual
+	if err != nil {
+		return err, nil
 	}
+	var actual []Server
+	for _, str := range redisServers {
+		server := Server{}
+		err = json.Unmarshal([]byte(str), &server)
+		if server.ID == "" {
+			server.ID = server.MongoID
+			server.MongoID = ""
+		} else {
+			server.MongoID = ""
+		}
+		if err != nil {
+			continue
+		}
+		if clean {
+			server = *CleanupServer(fakeRank, &server)
+		}
+		actual = append(actual, server)
+	}
+	return nil, actual
 }
