@@ -213,7 +213,7 @@ func (r *Ratelimiter) Ratelimit(next http.Handler) http.Handler {
 		left := r.Limit - ratelimit.Current
 		if left <= 0 {
 			headers.Set("Content-Type", "application/json")
-			headers.Set("Retry-After", strconv.FormatInt(r.NextReset.Sub(time.Now()).Milliseconds(), 10))
+			headers.Set("Retry-After", strconv.FormatInt(time.Now().Sub(r.NextReset).Milliseconds(), 10))
 			writer.WriteHeader(http.StatusTooManyRequests)
 			json.NewEncoder(writer).Encode(entities.RatelimitedError)
 			return

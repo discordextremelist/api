@@ -119,16 +119,8 @@ func UpdateStats(w http.ResponseWriter, r *http.Request) {
 }
 
 func InitBotRoutes() {
-	botRatelimiter = ratelimit.NewRatelimiter(ratelimit.RatelimiterOptions{
-		Limit:         10,
-		Reset:         10000,
-		RedisPrefix:   "rl_bots",
-		TempBanAfter:  2,
-		PermBanAfter:  2,
-		TempBanLength: 24 * time.Hour,
-	})
 	botsRatelimiter = ratelimit.NewRatelimiter(ratelimit.RatelimiterOptions{
-		Limit:         5,
+		Limit:         10,
 		Reset:         60000,
 		RedisPrefix:   "rl_bots",
 		TempBanAfter:  3,
@@ -143,14 +135,6 @@ func InitBotRoutes() {
 		PermBanAfter:  4,
 		TempBanLength: 24 * time.Hour,
 	})
-	fallbackRatelimiter = ratelimit.NewRatelimiter(ratelimit.RatelimiterOptions{
-		Limit:         10,
-		Reset:         10000,
-		RedisPrefix:   "rl_bots_fallback",
-		TempBanAfter:  2,
-		PermBanAfter:  2,
-		TempBanLength: 24 * time.Hour,
-	})
 	util.Router.Route("/bots", func(r chi.Router) {
 		r.Use(botsRatelimiter.Ratelimit)
 		r.Get("/", Bots)
@@ -161,7 +145,7 @@ func InitBotRoutes() {
 			return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 				err, bot := entities.LookupBot(chi.URLParam(request, "id"), true)
 				if err != nil {
-					fallbackRatelimiter.Ratelimit(handler).ServeHTTP(writer, request)
+					botsRatelimiter.Ratelimit(handler).ServeHTTP(writer, request)
 				} else {
 					if bot.Status.Premium {
 						premiumBotRatelimiter.Ratelimit(handler).ServeHTTP(writer, request)
