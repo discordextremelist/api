@@ -16,10 +16,10 @@ import (
 )
 
 var (
-	botRatelimiter        ratelimit.Ratelimiter
-	botsRatelimiter       ratelimit.Ratelimiter
-	premiumBotRatelimiter ratelimit.Ratelimiter
-	fallbackRatelimiter   ratelimit.Ratelimiter
+	botRatelimiter        *ratelimit.Ratelimiter
+	botsRatelimiter       *ratelimit.Ratelimiter
+	premiumBotRatelimiter *ratelimit.Ratelimiter
+	fallbackRatelimiter   *ratelimit.Ratelimiter
 )
 
 func Bot(w http.ResponseWriter, r *http.Request) {

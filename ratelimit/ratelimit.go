@@ -64,8 +64,8 @@ type RatelimiterOptions struct {
 	PermBanAfter  int
 }
 
-func NewRatelimiter(opts RatelimiterOptions) Ratelimiter {
-	rl := Ratelimiter{
+func NewRatelimiter(opts RatelimiterOptions) *Ratelimiter {
+	rl := &Ratelimiter{
 		Cache:         make(map[string]*Ratelimit),
 		Limit:         opts.Limit,
 		Reset:         opts.Reset,
@@ -102,7 +102,7 @@ func (r *Ratelimiter) resetRatelimits() {
 		select {
 		case <-time.After(time.Duration(r.Reset) * time.Millisecond):
 			{
-				r.NextReset = time.Now().Add(time.Duration(r.Reset) * time.Millisecond)
+				r.NextReset = time.Now().Add(time.Duration(r.Reset))
 				for k := range r.Cache {
 					r.reset(k)
 				}

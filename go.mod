@@ -13,7 +13,6 @@ require (
 	golang.org/x/net v0.0.0-20200324143707-d3edc9973b7e // indirect
 	golang.org/x/sys v0.0.0-20200810151505-1b9f1253b3ed // indirect
 	google.golang.org/grpc v1.31.0 // indirect
-	gopkg.in/yaml.v2 v2.2.8 // indirect
 	k8s.io/apimachinery v0.18.0
 	k8s.io/client-go v0.18.0
 )

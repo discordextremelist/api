@@ -94,11 +94,11 @@ func Health(w http.ResponseWriter, _ *http.Request) {
 
 func InitGeneralRoutes() {
 	ratelimiter := ratelimit.NewRatelimiter(ratelimit.RatelimiterOptions{
-		Limit:         3,
+		Limit:         5,
 		Reset:         5000,
 		RedisPrefix:   "rl_general",
 		TempBanLength: 1 * time.Hour,
-		TempBanAfter:  3,
+		TempBanAfter:  5,
 		PermBanAfter:  2,
 	})
 	util.Router.Route("/", func(r chi.Router) {
