@@ -16,10 +16,8 @@ import (
 )
 
 var (
-	botRatelimiter        *ratelimit.Ratelimiter
 	botsRatelimiter       *ratelimit.Ratelimiter
 	premiumBotRatelimiter *ratelimit.Ratelimiter
-	fallbackRatelimiter   *ratelimit.Ratelimiter
 )
 
 func Bot(w http.ResponseWriter, r *http.Request) {
@@ -150,7 +148,7 @@ func InitBotRoutes() {
 					if bot.Status.Premium {
 						premiumBotRatelimiter.Ratelimit(handler).ServeHTTP(writer, request)
 					} else {
-						botRatelimiter.Ratelimit(handler).ServeHTTP(writer, request)
+						botsRatelimiter.Ratelimit(handler).ServeHTTP(writer, request)
 					}
 				}
 			})
