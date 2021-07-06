@@ -5,15 +5,25 @@ import (
 	"encoding/json"
 	"github.com/discordextremelist/api/entities"
 	"github.com/discordextremelist/api/util"
+	"github.com/go-redis/redis/v8"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 )
 
-var TempBanReset = 7 * 24 * time.Hour
+var (
+	DefaultRatelimit = &Ratelimit{
+		Current:         0,
+		AfterClearCount: 0,
+		TempBan:         false,
+		TempBannedAt:    0,
+		PermBannedAt:    0,
+		TotalBans:       0,
+	}
+	TempBanReset = 7 * 24 * time.Hour
+)
 
 type Ratelimit struct {
 	Current         int   `json:"current"`
@@ -44,10 +54,8 @@ func (r *Ratelimit) PatchPerm() {
 }
 
 type Ratelimiter struct {
-	Cache         map[string]*Ratelimit
 	Limit         int
 	Reset         int
-	Mutex         *sync.Mutex
 	NextReset     time.Time
 	RPrefix       string
 	TempBanLength time.Duration
@@ -66,10 +74,8 @@ type RatelimiterOptions struct {
 
 func NewRatelimiter(opts RatelimiterOptions) *Ratelimiter {
 	rl := &Ratelimiter{
-		Cache:         make(map[string]*Ratelimit),
 		Limit:         opts.Limit,
 		Reset:         opts.Reset,
-		Mutex:         &sync.Mutex{},
 		NextReset:     time.Now().Add(time.Duration(opts.Reset) * time.Millisecond),
 		RPrefix:       opts.RedisPrefix,
 		TempBanLength: opts.TempBanLength,
@@ -77,24 +83,26 @@ func NewRatelimiter(opts RatelimiterOptions) *Ratelimiter {
 		PermBanAfter:  opts.PermBanAfter,
 	}
 	s := time.Now()
-	count := rl.cacheAll()
-	log.WithField("ratelimiter", opts.RedisPrefix).Debugf("Caching %d ratelimit(s) took: %v", count, time.Now().Sub(s))
+	count := util.Database.Redis.HLen(context.TODO(), opts.RedisPrefix).Val()
+	log.WithField("ratelimiter", opts.RedisPrefix).Debugf("Took %s to get %d ratelimits!", time.Now().Sub(s), count)
 	go rl.resetRatelimits()
 	go rl.resetTempBans()
 	return rl
 }
 
-func (r *Ratelimiter) cacheAll() int {
+func (r *Ratelimiter) getAll() map[string]*Ratelimit {
+	ratelimits := make(map[string]*Ratelimit)
 	results, err := util.Database.Redis.HGetAll(context.TODO(), r.RPrefix).Result()
 	if err != nil {
 		log.WithField("ratelimiter", r.RPrefix).Fatalf("Failed to get ratelimits!")
+		return ratelimits
 	}
-	for key, val := range results {
+	for k, val := range results {
 		ratelimit := &Ratelimit{}
 		_ = json.Unmarshal([]byte(val), ratelimit)
-		r.overwrite(key, *ratelimit)
+		ratelimits[k] = ratelimit
 	}
-	return len(results)
+	return ratelimits
 }
 
 func (r *Ratelimiter) resetRatelimits() {
@@ -103,7 +111,7 @@ func (r *Ratelimiter) resetRatelimits() {
 		case <-time.After(time.Duration(r.Reset) * time.Millisecond):
 			{
 				r.NextReset = time.Now().Add(time.Duration(r.Reset))
-				for k := range r.Cache {
+				for k := range r.getAll() {
 					r.reset(k)
 				}
 			}
@@ -111,7 +119,7 @@ func (r *Ratelimiter) resetRatelimits() {
 	}
 }
 
-func (r *Ratelimiter) cacheRatelimit(key string, ratelimit Ratelimit) {
+func (r *Ratelimiter) cacheRatelimit(key string, ratelimit *Ratelimit) {
 	if ratelimit.PermBannedAt > 0 {
 		return
 	}
@@ -130,13 +138,13 @@ func (r *Ratelimiter) resetTempBans() {
 		select {
 		case <-time.After(TempBanReset):
 			{
-				for k, v := range r.Cache {
+				for k, v := range r.getAll() {
 					if v.PermBannedAt > 0 {
 						return
 					}
 					v.Unpatch()
 					v.AfterClearCount = 0
-					r.overwrite(k, *v)
+					r.cacheRatelimit(k, v)
 				}
 			}
 		}
@@ -144,9 +152,19 @@ func (r *Ratelimiter) resetTempBans() {
 }
 
 func (r *Ratelimiter) getRatelimit(key string) *Ratelimit {
-	r.Mutex.Lock()
-	defer r.Mutex.Unlock()
-	rl := r.Cache[key]
+	res, err := util.Database.Redis.HGet(context.TODO(), r.RPrefix, key).Result()
+	if err != nil {
+		if err == redis.Nil {
+			r.cacheRatelimit(key, DefaultRatelimit)
+			return DefaultRatelimit
+		}
+		return DefaultRatelimit
+	}
+	var rl *Ratelimit
+	err = json.Unmarshal([]byte(res), &rl)
+	if err != nil {
+		return DefaultRatelimit
+	}
 	if rl == nil {
 		rl = &Ratelimit{
 			Current:         0,
@@ -158,15 +176,12 @@ func (r *Ratelimiter) getRatelimit(key string) *Ratelimit {
 		}
 	}
 	rl.Current++
-	r.Cache[key] = rl
-	r.cacheRatelimit(key, *rl)
+	r.cacheRatelimit(key, rl)
 	return rl
 }
 
 func (r *Ratelimiter) reset(key string) {
-	r.Mutex.Lock()
-	defer r.Mutex.Unlock()
-	rl := r.Cache[key]
+	rl := r.getRatelimit(key)
 	if rl.PermBannedAt < 1 && rl.TotalBans == r.PermBanAfter {
 		rl.PatchPerm()
 	}
@@ -186,14 +201,7 @@ func (r *Ratelimiter) reset(key string) {
 		}
 	}
 	rl.Current = 0
-	r.Cache[key] = rl
-	r.cacheRatelimit(key, *rl)
-}
-
-func (r *Ratelimiter) overwrite(key string, ratelimit Ratelimit) {
-	r.Mutex.Lock()
-	defer r.Mutex.Unlock()
-	r.Cache[key] = &ratelimit
+	r.cacheRatelimit(key, rl)
 }
 
 func (r *Ratelimiter) Ratelimit(next http.Handler) http.Handler {
