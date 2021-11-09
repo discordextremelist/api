@@ -94,7 +94,7 @@ func (r *Ratelimiter) getAll() map[string]*Ratelimit {
 	ratelimits := make(map[string]*Ratelimit)
 	results, err := util.Database.Redis.HGetAll(context.TODO(), r.RPrefix).Result()
 	if err != nil {
-		log.WithField("ratelimiter", r.RPrefix).Fatalf("Failed to get ratelimits!")
+		log.WithField("ratelimiter", r.RPrefix).Warnf("Failed to get ratelimits: %v!", err)
 		return ratelimits
 	}
 	for k, val := range results {
