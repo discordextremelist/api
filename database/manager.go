@@ -99,6 +99,7 @@ func (manager *Manager) OpenRedisConnection() {
 			SentinelAddrs: splitSentinels,
 			MasterName:    os.Getenv("REDIS_MASTER"),
 			Password:      pass,
+			SentinelPassword: pass,
 			DB:            db,
 			DialTimeout:   10 * time.Second,
 			ReadTimeout:   15 * time.Second,
