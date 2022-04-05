@@ -180,19 +180,9 @@ func LookupBot(id string, clean bool) (error, *Bot) {
 }
 
 func GetAllBots(clean bool) (error, []Bot) {
-	redisBots, err := util.Database.Redis.HVals(context.TODO(), "bots").Result()
+	redisBots := util.Scan[Bot]("bots")
 	var actual []Bot
-	if err != nil {
-		sentry.CaptureException(err)
-		return err, nil
-	}
-	for _, str := range redisBots {
-		bot := Bot{}
-		err = json.Unmarshal([]byte(str), &bot)
-		if err != nil {
-			sentry.CaptureException(err)
-			continue
-		}
+	for _, bot := range redisBots {
 		if bot.ID == "" {
 			bot.ID = bot.MongoID
 			bot.MongoID = ""

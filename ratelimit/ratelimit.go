@@ -92,19 +92,7 @@ func NewRatelimiter(opts RatelimiterOptions) *Ratelimiter {
 }
 
 func (r *Ratelimiter) getAll() map[string]*Ratelimit {
-	ratelimits := make(map[string]*Ratelimit)
-	results, err := util.Database.Redis.HGetAll(context.TODO(), r.RPrefix).Result()
-	if err != nil {
-		sentry.CaptureException(err)
-		log.WithField("ratelimiter", r.RPrefix).Warnf("Failed to get ratelimits: %v!", err)
-		return ratelimits
-	}
-	for k, val := range results {
-		ratelimit := &Ratelimit{}
-		_ = json.Unmarshal([]byte(val), ratelimit)
-		ratelimits[k] = ratelimit
-	}
-	return ratelimits
+	return util.Scan[*Ratelimit](r.RPrefix)
 }
 
 func (r *Ratelimiter) resetRatelimits() {

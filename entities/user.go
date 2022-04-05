@@ -222,24 +222,14 @@ func LookupUser(id string, clean bool) (error, *User) {
 }
 
 func GetAllUsers(clean bool) (error, []User) {
-	redisUsers, err := util.Database.Redis.HVals(context.TODO(), "users").Result()
-	if err != nil {
-		sentry.CaptureException(err)
-		return err, nil
-	}
+	redisUsers := util.Scan[User]("users")
 	var actual []User
-	for _, str := range redisUsers {
-		user := User{}
-		err = json.Unmarshal([]byte(str), &user)
+	for _, user := range redisUsers {
 		if user.ID == "" {
 			user.ID = user.MongoID
 			user.MongoID = ""
 		} else {
 			user.MongoID = ""
-		}
-		if err != nil {
-			sentry.CaptureException(err)
-			continue
 		}
 		if clean {
 			user = *CleanupUser(fakeRank, &user)

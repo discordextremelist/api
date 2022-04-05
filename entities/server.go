@@ -133,24 +133,14 @@ func LookupServer(id string, clean bool) (error, *Server) {
 }
 
 func GetAllServers(clean bool) (error, []Server) {
-	redisServers, err := util.Database.Redis.HVals(context.TODO(), "servers").Result()
-	if err != nil {
-		sentry.CaptureException(err)
-		return err, nil
-	}
+	redisServers := util.Scan[Server]("servers")
 	var actual []Server
-	for _, str := range redisServers {
-		server := Server{}
-		err = json.Unmarshal([]byte(str), &server)
+	for _, server := range redisServers {
 		if server.ID == "" {
 			server.ID = server.MongoID
 			server.MongoID = ""
 		} else {
 			server.MongoID = ""
-		}
-		if err != nil {
-			sentry.CaptureException(err)
-			continue
 		}
 		if clean {
 			server = *CleanupServer(fakeRank, &server)

@@ -146,24 +146,14 @@ func LookupTemplate(id string) (error, *ServerTemplate) {
 }
 
 func GetAllTemplates() (error, []ServerTemplate) {
-	redisTemplates, err := util.Database.Redis.HVals(context.TODO(), "templates").Result()
-	if err != nil {
-		sentry.CaptureException(err)
-		return err, nil
-	}
+	redisTemplates := util.Scan[ServerTemplate]("templates")
 	var actual []ServerTemplate
-	for _, str := range redisTemplates {
-		template := ServerTemplate{}
-		err = json.Unmarshal([]byte(str), &template)
+	for _, template := range redisTemplates {
 		if template.ID == "" {
 			template.ID = template.MongoID
 			template.MongoID = ""
 		} else {
 			template.MongoID = ""
-		}
-		if err != nil {
-			sentry.CaptureException(err)
-			continue
 		}
 		actual = append(actual, template)
 	}
