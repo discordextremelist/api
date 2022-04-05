@@ -17,4 +17,5 @@ func InitSentry() {
 	if err != nil {
 		logrus.Errorf("Failed to initialise sentry: %v", err)
 	}
+	logrus.Info("Sentry configured!")
 }
