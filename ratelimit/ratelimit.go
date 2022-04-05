@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"github.com/discordextremelist/api/entities"
 	"github.com/discordextremelist/api/util"
+	"github.com/getsentry/sentry-go"
 	"github.com/go-redis/redis/v8"
 	log "github.com/sirupsen/logrus"
 	"net/http"
@@ -94,6 +95,7 @@ func (r *Ratelimiter) getAll() map[string]*Ratelimit {
 	ratelimits := make(map[string]*Ratelimit)
 	results, err := util.Database.Redis.HGetAll(context.TODO(), r.RPrefix).Result()
 	if err != nil {
+		sentry.CaptureException(err)
 		log.WithField("ratelimiter", r.RPrefix).Warnf("Failed to get ratelimits: %v!", err)
 		return ratelimits
 	}

@@ -5,11 +5,13 @@ import (
 	"github.com/discordextremelist/api/entities"
 	"github.com/discordextremelist/api/routes"
 	"github.com/discordextremelist/api/util"
+	"github.com/getsentry/sentry-go"
 	"github.com/go-chi/chi"
 	"github.com/joho/godotenv"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"os"
+	"time"
 )
 
 var (
@@ -33,6 +35,8 @@ func init() {
 }
 
 func main() {
+	util.InitSentry()
+	defer sentry.Flush(2 * time.Second)
 	if !util.Dev {
 		util.BuildClient()
 		err := util.FindKubernetesNode()

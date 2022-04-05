@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/discordextremelist/api/util"
+	"github.com/getsentry/sentry-go"
 	"github.com/go-chi/chi/middleware"
 	log "github.com/sirupsen/logrus"
 	"net/http"
@@ -141,6 +142,7 @@ func WritePrettyJson(status int, writer http.ResponseWriter, v interface{}) {
 }
 
 func WriteErrorResponse(w http.ResponseWriter, err error) {
+	sentry.CaptureException(err)
 	WriteJson(500, w, buildInternal(true, 500, err.Error(), nil, nil, nil, nil))
 }
 

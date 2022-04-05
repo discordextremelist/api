@@ -96,14 +96,14 @@ func (manager *Manager) OpenRedisConnection() {
 	if sentinels := os.Getenv("REDIS_SENTINELS"); len(sentinels) > 0 {
 		var splitSentinels = strings.Split(sentinels, ";")
 		manager.Redis = redis.NewFailoverClient(&redis.FailoverOptions{
-			SentinelAddrs: splitSentinels,
-			MasterName:    os.Getenv("REDIS_MASTER"),
-			Password:      pass,
+			SentinelAddrs:    splitSentinels,
+			MasterName:       os.Getenv("REDIS_MASTER"),
+			Password:         pass,
 			SentinelPassword: pass,
-			DB:            db,
-			DialTimeout:   10 * time.Second,
-			ReadTimeout:   15 * time.Second,
-			WriteTimeout:  15 * time.Second,
+			DB:               db,
+			DialTimeout:      5 * time.Second,
+			ReadTimeout:      5 * time.Second,
+			WriteTimeout:     5 * time.Second,
 		})
 	} else {
 		ip := os.Getenv("REDIS_IP")
@@ -112,9 +112,9 @@ func (manager *Manager) OpenRedisConnection() {
 			Addr:         fmt.Sprintf("%s:%s", ip, port),
 			Password:     pass,
 			DB:           db,
-			DialTimeout:  10 * time.Second,
-			ReadTimeout:  15 * time.Second,
-			WriteTimeout: 15 * time.Second,
+			DialTimeout:  5 * time.Second,
+			ReadTimeout:  5 * time.Second,
+			WriteTimeout: 5 * time.Second,
 		})
 	}
 	manager.retryRedisConnect()

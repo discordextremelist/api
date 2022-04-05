@@ -3,6 +3,7 @@ package util
 import (
 	"context"
 	"errors"
+	"github.com/getsentry/sentry-go"
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -20,6 +21,7 @@ func BuildClient() {
 	config, _ := rest.InClusterConfig()
 	client, err := kubernetes.NewForConfig(config)
 	if err != nil {
+		sentry.CaptureException(err)
 		logrus.Errorf("Failed to create a Kubernetes API Client: %v", err)
 	}
 	Client = client
@@ -30,6 +32,7 @@ func FindKubernetesNode() error {
 	host, _ := os.Hostname()
 	pod, err := Client.CoreV1().Pods("del").Get(context.TODO(), host, v1.GetOptions{})
 	if err != nil {
+		sentry.CaptureException(err)
 		logrus.Errorf("Failed fetching pod info: %v", err)
 		return UnknownPod
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/discordextremelist/api/util"
+	"github.com/getsentry/sentry-go"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"time"
@@ -20,6 +21,7 @@ func PopulateDevCache() {
 		var mongoEntities []bson.M
 		cursor, err := util.Database.Mongo.Collection(col).Find(context.TODO(), bson.M{})
 		if err != nil {
+			sentry.CaptureException(err)
 			logrus.Errorf("Failed querying database for collection %s: %s", col, err.Error())
 			continue
 		}
@@ -34,6 +36,7 @@ func PopulateDevCache() {
 			id := entity["_id"].(string)
 			marshaled, err := json.Marshal(&entity)
 			if err != nil {
+				sentry.CaptureException(err)
 				logrus.Errorf("Failed to marshal an entity for cache %s (col: %s, err: %s)", id, col, err.Error())
 				continue
 			}
@@ -42,7 +45,8 @@ func PopulateDevCache() {
 		}
 		err = util.Database.Redis.HMSet(context.TODO(), col, toSet).Err()
 		if err != nil {
-			logrus.Errorf("Failed to populate cache for redis map %s", col, err.Error())
+			sentry.CaptureException(err)
+			logrus.Errorf("Failed to populate cache for redis map %s, %v", col, err.Error())
 			continue
 		}
 		logrus.Infof("Took %s to populate cache!", time.Now().Sub(start))
