@@ -156,6 +156,7 @@ func (r *Ratelimiter) resetTempBans() {
 func (r *Ratelimiter) getRatelimit(key string) *Ratelimit {
 	res, err := util.Database.Redis.HGet(context.TODO(), r.RPrefix, key).Result()
 	if err != nil {
+		sentry.CaptureException(err)
 		if err == redis.Nil {
 			r.cacheRatelimit(key, DefaultRatelimit)
 			return DefaultRatelimit
@@ -165,6 +166,7 @@ func (r *Ratelimiter) getRatelimit(key string) *Ratelimit {
 	var rl *Ratelimit
 	err = json.Unmarshal([]byte(res), &rl)
 	if err != nil {
+		sentry.CaptureException(err)
 		return DefaultRatelimit
 	}
 	if rl == nil {

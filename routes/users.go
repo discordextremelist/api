@@ -4,6 +4,7 @@ import (
 	"github.com/discordextremelist/api/entities"
 	"github.com/discordextremelist/api/ratelimit"
 	"github.com/discordextremelist/api/util"
+	"github.com/getsentry/sentry-go"
 	"github.com/go-chi/chi"
 	"go.mongodb.org/mongo-driver/mongo"
 	"net/http"
@@ -16,6 +17,7 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 		if err == mongo.ErrNoDocuments {
 			entities.NotFound(w, r)
 		} else {
+			sentry.CaptureException(err)
 			entities.WriteErrorResponse(w, err)
 		}
 		return

@@ -6,6 +6,7 @@ import (
 	"github.com/discordextremelist/api/entities"
 	"github.com/discordextremelist/api/ratelimit"
 	"github.com/discordextremelist/api/util"
+	"github.com/getsentry/sentry-go"
 	"github.com/go-chi/chi"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -26,6 +27,7 @@ func Bot(w http.ResponseWriter, r *http.Request) {
 		if err == mongo.ErrNoDocuments {
 			entities.NotFound(w, r)
 		} else {
+			sentry.CaptureException(err)
 			entities.WriteErrorResponse(w, err)
 		}
 		return
@@ -36,6 +38,7 @@ func Bot(w http.ResponseWriter, r *http.Request) {
 func Bots(w http.ResponseWriter, _ *http.Request) {
 	err, bots := entities.GetAllBots(true)
 	if err != nil {
+		sentry.CaptureException(err)
 		entities.WriteErrorResponse(w, err)
 		return
 	}
@@ -62,12 +65,14 @@ func UpdateStats(w http.ResponseWriter, r *http.Request) {
 	} else {
 		bytes, err := ioutil.ReadAll(r.Body)
 		if err != nil {
+			sentry.CaptureException(err)
 			entities.WriteErrorResponse(w, entities.ReadFailed)
 			return
 		}
 		var body StatsRequest
 		err = json.Unmarshal(bytes, &body)
 		if err != nil {
+			sentry.CaptureException(err)
 			entities.WriteErrorResponse(w, entities.ReadFailed)
 			return
 		}
@@ -78,6 +83,7 @@ func UpdateStats(w http.ResponseWriter, r *http.Request) {
 			} else {
 				entities.WriteErrorResponse(w, err)
 			}
+			sentry.CaptureException(err)
 			return
 		}
 		if !util.Dev && (r.Header.Get(util.Authorization) != bot.Token) {
@@ -99,16 +105,19 @@ func UpdateStats(w http.ResponseWriter, r *http.Request) {
 		}
 		marshaled, err := json.Marshal(bot)
 		if err != nil {
+			sentry.CaptureException(err)
 			entities.WriteErrorResponse(w, err)
 			return
 		}
 		err = util.Database.Redis.HMSet(context.TODO(), "bots", bot.ID, string(marshaled)).Err()
 		if err != nil {
+			sentry.CaptureException(err)
 			entities.WriteErrorResponse(w, err)
 			return
 		}
 		_, err = util.Database.Mongo.Collection("bots").UpdateOne(context.TODO(), bson.M{"_id": bot.ID}, bson.D{{"$set", set}})
 		if err != nil {
+			sentry.CaptureException(err)
 			entities.WriteErrorResponse(w, err)
 			return
 		}

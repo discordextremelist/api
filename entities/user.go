@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/discordextremelist/api/util"
+	"github.com/getsentry/sentry-go"
 	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -148,6 +149,7 @@ func mongoLookupUser(id string) (error, *User) {
 	decodeStart := time.Now()
 	var decodeEnd int64
 	if err := res.Decode(&user); err != nil {
+		sentry.CaptureException(err)
 		AddMongoLookupTime("users", id, findEnd, time.Since(decodeStart).Microseconds())
 		return err, nil
 	}
@@ -168,6 +170,7 @@ func LookupUser(id string, clean bool) (error, *User) {
 				if err == mongo.ErrNoDocuments {
 					return err, nil
 				}
+				sentry.CaptureException(err)
 				log.Errorf("Fallback for MongoDB failed for LookupUser(%s): %v", id, err.Error())
 				return LookupError, nil
 			} else {
@@ -182,6 +185,7 @@ func LookupUser(id string, clean bool) (error, *User) {
 		decodeStart := time.Now()
 		err = json.Unmarshal([]byte(redisUser), &user)
 		if err != nil {
+			sentry.CaptureException(err)
 			AddRedisLookupTime("users", id, findEnd, time.Since(decodeStart).Microseconds())
 			log.Errorf("Json parsing failed for LookupUser(%s): %v", id, err.Error())
 			return LookupError, nil
@@ -204,6 +208,7 @@ func LookupUser(id string, clean bool) (error, *User) {
 			if err == mongo.ErrNoDocuments {
 				return err, nil
 			}
+			sentry.CaptureException(err)
 			log.Errorf("Fallback for MongoDB failed for LookupUser(%s): %v", id, err.Error())
 			return LookupError, nil
 		} else {
@@ -219,6 +224,7 @@ func LookupUser(id string, clean bool) (error, *User) {
 func GetAllUsers(clean bool) (error, []User) {
 	redisUsers, err := util.Database.Redis.HVals(context.TODO(), "users").Result()
 	if err != nil {
+		sentry.CaptureException(err)
 		return err, nil
 	}
 	var actual []User
@@ -232,6 +238,7 @@ func GetAllUsers(clean bool) (error, []User) {
 			user.MongoID = ""
 		}
 		if err != nil {
+			sentry.CaptureException(err)
 			continue
 		}
 		if clean {

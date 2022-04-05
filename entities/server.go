@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/discordextremelist/api/util"
+	"github.com/getsentry/sentry-go"
 	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -59,6 +60,7 @@ func mongoLookupServer(id string) (error, *Server) {
 	decodeStart := time.Now()
 	var decodeEnd int64
 	if err := res.Decode(&server); err != nil {
+		sentry.CaptureException(err)
 		AddMongoLookupTime("servers", id, findEnd, time.Since(decodeStart).Microseconds())
 		return err, nil
 	}
@@ -79,6 +81,7 @@ func LookupServer(id string, clean bool) (error, *Server) {
 				if err == mongo.ErrNoDocuments {
 					return err, nil
 				}
+				sentry.CaptureException(err)
 				log.Errorf("Fallback for MongoDB failed for LookupServer(%s): %v", id, err.Error())
 				return LookupError, nil
 			} else {
@@ -93,6 +96,7 @@ func LookupServer(id string, clean bool) (error, *Server) {
 		decodeStart := time.Now()
 		err = json.Unmarshal([]byte(redisServer), &server)
 		if err != nil {
+			sentry.CaptureException(err)
 			AddRedisLookupTime("servers", id, findEnd, time.Since(decodeStart).Microseconds())
 			log.Errorf("Json parsing failed for LookupServer(%s): %v", id, err.Error())
 			return LookupError, nil
@@ -115,6 +119,7 @@ func LookupServer(id string, clean bool) (error, *Server) {
 			if err == mongo.ErrNoDocuments {
 				return err, nil
 			}
+			sentry.CaptureException(err)
 			log.Errorf("Fallback for MongoDB failed for LookupServer(%s): %v", id, err.Error())
 			return LookupError, nil
 		} else {
@@ -130,6 +135,7 @@ func LookupServer(id string, clean bool) (error, *Server) {
 func GetAllServers(clean bool) (error, []Server) {
 	redisServers, err := util.Database.Redis.HVals(context.TODO(), "servers").Result()
 	if err != nil {
+		sentry.CaptureException(err)
 		return err, nil
 	}
 	var actual []Server
@@ -143,6 +149,7 @@ func GetAllServers(clean bool) (error, []Server) {
 			server.MongoID = ""
 		}
 		if err != nil {
+			sentry.CaptureException(err)
 			continue
 		}
 		if clean {

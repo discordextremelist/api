@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"fmt"
+	"github.com/getsentry/sentry-go"
 	"github.com/go-redis/redis/v8"
 	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -28,6 +29,7 @@ func NewManager() Manager {
 
 func (manager *Manager) IsRedisOpen() bool {
 	if err := manager.Redis.Ping(context.Background()).Err(); err != nil {
+		sentry.CaptureException(err)
 		return false
 	}
 	return true
@@ -35,6 +37,7 @@ func (manager *Manager) IsRedisOpen() bool {
 
 func (manager *Manager) IsMongoOpen() bool {
 	if err := manager.Mongo.Client().Ping(context.TODO(), readpref.Primary()); err != nil {
+		sentry.CaptureException(err)
 		return false
 	}
 	return true
@@ -45,6 +48,7 @@ func (manager *Manager) PingRedis() int64 {
 	var redisPingEnd int64
 	err := manager.Redis.Ping(context.TODO()).Err()
 	if err != nil {
+		sentry.CaptureException(err)
 		redisPingEnd = -1
 	} else {
 		redisPingEnd = time.Since(redisPing).Milliseconds()
@@ -57,6 +61,7 @@ func (manager *Manager) PingMongo() int64 {
 	var mongoPingEnd int64
 	err := manager.Mongo.Client().Ping(context.TODO(), readpref.Primary())
 	if err != nil {
+		sentry.CaptureException(err)
 		mongoPingEnd = -1
 	} else {
 		mongoPingEnd = time.Since(mongoPingStart).Milliseconds()
@@ -77,6 +82,7 @@ func (manager *Manager) retryRedisConnect() {
 					backoff = 1 * time.Second
 				}
 				if err := manager.Redis.Ping(context.Background()).Err(); err != nil {
+					sentry.CaptureException(err)
 					log.WithField("type", "Redis").Warnf("Retry attempt %d failed!", attempt)
 				} else {
 					log.WithField("type", "Redis").Infof("Connected on attempt %d!", attempt)
@@ -90,6 +96,7 @@ func (manager *Manager) retryRedisConnect() {
 func (manager *Manager) OpenRedisConnection() {
 	db, err := strconv.Atoi(os.Getenv("REDIS_DB"))
 	if err != nil {
+		sentry.CaptureException(err)
 		log.WithField("type", "Redis").Fatal("Failed to convert type string to type int")
 	}
 	pass := os.Getenv("REDIS_PASSWORD")
@@ -124,6 +131,7 @@ func (manager *Manager) OpenMongoConnection() {
 	url := os.Getenv("MONGO_URL")
 	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(url))
 	if err != nil {
+		sentry.CaptureException(err)
 		log.WithField("type", "MongoDB").Fatalf("Failed to connect to mongodb instance: %s", err.Error())
 	}
 	backoff := 0 * time.Second
@@ -137,6 +145,7 @@ func (manager *Manager) OpenMongoConnection() {
 		}
 		attempt++
 		if err := client.Ping(context.Background(), readpref.Primary()); err != nil {
+			sentry.CaptureException(err)
 			log.WithField("type", "MongoDB").Warnf("Retry attempt %d failed!", attempt)
 		} else {
 			manager.Mongo = client.Database(os.Getenv("MONGO_DB"))

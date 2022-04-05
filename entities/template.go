@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/discordextremelist/api/util"
+	"github.com/getsentry/sentry-go"
 	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -81,6 +82,7 @@ func mongoLookupTemplate(id string) (error, *ServerTemplate) {
 	decodeStart := time.Now()
 	var decodeEnd int64
 	if err := res.Decode(&template); err != nil {
+		sentry.CaptureException(err)
 		AddMongoLookupTime("templates", id, findEnd, time.Since(decodeStart).Microseconds())
 		return err, nil
 	}
@@ -101,6 +103,7 @@ func LookupTemplate(id string) (error, *ServerTemplate) {
 				if err == mongo.ErrNoDocuments {
 					return err, nil
 				}
+				sentry.CaptureException(err)
 				log.Errorf("Fallback for MongoDB failed for LookupTemplate(%s): %v", id, err.Error())
 				return LookupError, nil
 			} else {
@@ -112,6 +115,7 @@ func LookupTemplate(id string) (error, *ServerTemplate) {
 		decodeStart := time.Now()
 		err = json.Unmarshal([]byte(redisTemplate), &template)
 		if err != nil {
+			sentry.CaptureException(err)
 			AddRedisLookupTime("templates", id, findEnd, time.Since(decodeStart).Microseconds())
 			log.Errorf("Json parsing failed for LookupTemplate(%s): %v", id, err.Error())
 			return LookupError, nil
@@ -131,6 +135,7 @@ func LookupTemplate(id string) (error, *ServerTemplate) {
 			if err == mongo.ErrNoDocuments {
 				return err, nil
 			}
+			sentry.CaptureException(err)
 			log.Errorf("Fallback for MongoDB failed for LookupTemplate(%s): %v", id, err.Error())
 			return LookupError, nil
 		} else {
@@ -143,6 +148,7 @@ func LookupTemplate(id string) (error, *ServerTemplate) {
 func GetAllTemplates() (error, []ServerTemplate) {
 	redisTemplates, err := util.Database.Redis.HVals(context.TODO(), "templates").Result()
 	if err != nil {
+		sentry.CaptureException(err)
 		return err, nil
 	}
 	var actual []ServerTemplate
@@ -156,6 +162,7 @@ func GetAllTemplates() (error, []ServerTemplate) {
 			template.MongoID = ""
 		}
 		if err != nil {
+			sentry.CaptureException(err)
 			continue
 		}
 		actual = append(actual, template)

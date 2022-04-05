@@ -4,6 +4,7 @@ import (
 	"github.com/discordextremelist/api/entities"
 	"github.com/discordextremelist/api/ratelimit"
 	"github.com/discordextremelist/api/util"
+	"github.com/getsentry/sentry-go"
 	"github.com/go-chi/chi"
 	"net/http"
 	"time"
@@ -13,12 +14,14 @@ func Stats(w http.ResponseWriter, _ *http.Request) {
 	result := entities.APIStatsResponse{Status: 200, Error: false}
 	err, servers := entities.GetAllServers(false)
 	if err != nil {
+		sentry.CaptureException(err)
 		entities.WriteJson(500, w, entities.GetServersFailed)
 		return
 	}
 	result.Servers = entities.APIStatsResponseServers{Total: len(servers)}
 	err, bots := entities.GetAllBots(false)
 	if err != nil {
+		sentry.CaptureException(err)
 		entities.WriteJson(500, w, entities.GetBotsFailed)
 		return
 	}
@@ -34,6 +37,7 @@ func Stats(w http.ResponseWriter, _ *http.Request) {
 	result.Bots = botRes
 	err, users := entities.GetAllUsers(false)
 	if err != nil {
+		sentry.CaptureException(err)
 		entities.WriteJson(500, w, entities.GetUsersFailed)
 		return
 	}
@@ -61,6 +65,7 @@ func Stats(w http.ResponseWriter, _ *http.Request) {
 	result.Users = userRes
 	err, templates := entities.GetAllTemplates()
 	if err != nil {
+		sentry.CaptureException(err)
 		entities.WriteJson(500, w, entities.GetTemplatesFailed)
 		return
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/discordextremelist/api/util"
+	"github.com/getsentry/sentry-go"
 	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -106,6 +107,7 @@ func mongoLookupBot(id string) (error, *Bot) {
 	decodeStart := time.Now()
 	var decodeEnd int64
 	if err := res.Decode(&bot); err != nil {
+		sentry.CaptureException(err)
 		AddMongoLookupTime("bots", id, findEnd, time.Since(decodeStart).Microseconds())
 		return err, nil
 	}
@@ -126,6 +128,7 @@ func LookupBot(id string, clean bool) (error, *Bot) {
 				if err == mongo.ErrNoDocuments {
 					return err, nil
 				}
+				sentry.CaptureException(err)
 				log.Errorf("Fallback for MongoDB failed for LookupBot(%s): %v", id, err.Error())
 				return LookupError, nil
 			} else {
@@ -140,6 +143,7 @@ func LookupBot(id string, clean bool) (error, *Bot) {
 		decodeStart := time.Now()
 		err = json.Unmarshal([]byte(redisBot), &bot)
 		if err != nil {
+			sentry.CaptureException(err)
 			AddRedisLookupTime("bots", id, findEnd, time.Since(decodeStart).Microseconds())
 			log.Errorf("Json parsing failed for LookupBot(%s): %v", id, err.Error())
 			return LookupError, nil
@@ -162,6 +166,7 @@ func LookupBot(id string, clean bool) (error, *Bot) {
 			if err == mongo.ErrNoDocuments {
 				return err, nil
 			}
+			sentry.CaptureException(err)
 			log.Errorf("Fallback for MongoDB failed for LookupBot(%s): %v", id, err.Error())
 			return LookupError, nil
 		} else {
@@ -178,12 +183,14 @@ func GetAllBots(clean bool) (error, []Bot) {
 	redisBots, err := util.Database.Redis.HVals(context.TODO(), "bots").Result()
 	var actual []Bot
 	if err != nil {
+		sentry.CaptureException(err)
 		return err, nil
 	}
 	for _, str := range redisBots {
 		bot := Bot{}
 		err = json.Unmarshal([]byte(str), &bot)
 		if err != nil {
+			sentry.CaptureException(err)
 			continue
 		}
 		if bot.ID == "" {
