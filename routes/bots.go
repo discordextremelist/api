@@ -81,9 +81,9 @@ func UpdateStats(w http.ResponseWriter, r *http.Request) {
 			if err == mongo.ErrNoDocuments {
 				entities.NotFound(w, r)
 			} else {
+				sentry.CaptureException(err)
 				entities.WriteErrorResponse(w, err)
 			}
-			sentry.CaptureException(err)
 			return
 		}
 		if !util.Dev && (r.Header.Get(util.Authorization) != bot.Token) {
