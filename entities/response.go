@@ -126,13 +126,13 @@ func RequestLogger(handler http.Handler) http.Handler {
 	})
 }
 
-func WriteJson(status int, writer http.ResponseWriter, v interface{}) {
+func WriteJson[T any](status int, writer http.ResponseWriter, v T) {
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(status)
 	json.NewEncoder(writer).Encode(v)
 }
 
-func WritePrettyJson(status int, writer http.ResponseWriter, v interface{}) {
+func WritePrettyJson[T any](status int, writer http.ResponseWriter, v T) {
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(status)
 	encoder := json.NewEncoder(writer)
@@ -140,8 +140,8 @@ func WritePrettyJson(status int, writer http.ResponseWriter, v interface{}) {
 	encoder.Encode(v)
 }
 
-func WriteErrorResponse(w http.ResponseWriter, err error) {
-	WriteJson(500, w, buildInternal(true, 500, err.Error(), nil, nil, nil, nil))
+func WriteErrorResponse(w http.ResponseWriter) {
+	WriteJson(500, w, buildInternal(true, 500, "Internal Server Error", nil, nil, nil, nil))
 }
 
 func WriteBotResponse(w http.ResponseWriter, bot *Bot) {

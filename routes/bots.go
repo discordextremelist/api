@@ -3,6 +3,7 @@ package routes
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"github.com/discordextremelist/api/entities"
 	"github.com/discordextremelist/api/ratelimit"
 	"github.com/discordextremelist/api/util"
@@ -24,11 +25,11 @@ var (
 func Bot(w http.ResponseWriter, r *http.Request) {
 	err, bot := entities.LookupBot(chi.URLParam(r, "id"), true)
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			entities.NotFound(w, r)
 		} else {
 			sentry.CaptureException(err)
-			entities.WriteErrorResponse(w, err)
+			entities.WriteErrorResponse(w)
 		}
 		return
 	}
@@ -39,7 +40,7 @@ func Bots(w http.ResponseWriter, _ *http.Request) {
 	err, bots := entities.GetAllBots(true)
 	if err != nil {
 		sentry.CaptureException(err)
-		entities.WriteErrorResponse(w, err)
+		entities.WriteErrorResponse(w)
 		return
 	}
 	entities.WriteJson(200, w, entities.APIResponseBots{
@@ -66,14 +67,14 @@ func UpdateStats(w http.ResponseWriter, r *http.Request) {
 		bytes, err := ioutil.ReadAll(r.Body)
 		if err != nil {
 			sentry.CaptureException(err)
-			entities.WriteErrorResponse(w, entities.ReadFailed)
+			entities.WriteErrorResponse(w)
 			return
 		}
 		var body StatsRequest
 		err = json.Unmarshal(bytes, &body)
 		if err != nil {
 			sentry.CaptureException(err)
-			entities.WriteErrorResponse(w, entities.ReadFailed)
+			entities.WriteErrorResponse(w)
 			return
 		}
 		err, bot := entities.LookupBot(chi.URLParam(r, "id"), false)
@@ -82,7 +83,7 @@ func UpdateStats(w http.ResponseWriter, r *http.Request) {
 				entities.NotFound(w, r)
 			} else {
 				sentry.CaptureException(err)
-				entities.WriteErrorResponse(w, err)
+				entities.WriteErrorResponse(w)
 			}
 			return
 		}
@@ -106,19 +107,19 @@ func UpdateStats(w http.ResponseWriter, r *http.Request) {
 		marshaled, err := json.Marshal(bot)
 		if err != nil {
 			sentry.CaptureException(err)
-			entities.WriteErrorResponse(w, err)
+			entities.WriteErrorResponse(w)
 			return
 		}
 		err = util.Database.Redis.HMSet(context.TODO(), "bots", bot.ID, string(marshaled)).Err()
 		if err != nil {
 			sentry.CaptureException(err)
-			entities.WriteErrorResponse(w, err)
+			entities.WriteErrorResponse(w)
 			return
 		}
 		_, err = util.Database.Mongo.Collection("bots").UpdateOne(context.TODO(), bson.M{"_id": bot.ID}, bson.D{{"$set", set}})
 		if err != nil {
 			sentry.CaptureException(err)
-			entities.WriteErrorResponse(w, err)
+			entities.WriteErrorResponse(w)
 			return
 		}
 		entities.WriteJson(200, w, map[string]interface{}{"status": 200, "error": false, "updated": body})

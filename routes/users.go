@@ -18,7 +18,7 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 			entities.NotFound(w, r)
 		} else {
 			sentry.CaptureException(err)
-			entities.WriteErrorResponse(w, err)
+			entities.WriteErrorResponse(w)
 		}
 		return
 	}

@@ -3,6 +3,7 @@ package entities
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"github.com/discordextremelist/api/util"
 	"github.com/getsentry/sentry-go"
 	log "github.com/sirupsen/logrus"
@@ -132,7 +133,7 @@ func LookupTemplate(id string) (error, *ServerTemplate) {
 	} else {
 		err, template := mongoLookupTemplate(id)
 		if err != nil {
-			if err == mongo.ErrNoDocuments {
+			if errors.Is(err, mongo.ErrNoDocuments) {
 				return err, nil
 			}
 			sentry.CaptureException(err)
